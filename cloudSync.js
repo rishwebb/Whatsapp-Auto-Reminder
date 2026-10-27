@@ -8,6 +8,11 @@
  * 4. Fallback: If MONGODB_URI is not provided, seamlessly runs in local disk mode with zero errors.
  */
 
+const dns = require('dns');
+try {
+    dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (_) {}
+
 const fs = require('fs');
 const path = require('path');
 const { MongoClient } = require('mongodb');
