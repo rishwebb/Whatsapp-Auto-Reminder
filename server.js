@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const QRCode = require('qrcode');
 const qrcodeTerminal = require('qrcode-terminal');
 const pino = require('pino');
@@ -29,14 +30,15 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 🛡️ Health check & Uptime Keep-Alive for Render
+// 🛡️ Open Uptime Keep-Alive Endpoints (No auth needed for monitoring services)
 app.get('/healthz', (req, res) => res.status(200).json({ status: 'ok', uptime: process.uptime(), state: connectionState }));
 app.get('/ping', (req, res) => res.status(200).send('pong'));
 
 // -------------------------------------------------------------
-// Configuration Management
+// Configuration Management & Authentication Shield
 // -------------------------------------------------------------
 let config = {};
+const activeSessions = new Map(); // token -> { createdAt }
 
 function loadConfig() {
     if (fs.existsSync(CONFIG_FILE)) {
@@ -67,6 +69,31 @@ function saveConfig() {
     } catch (e) {
         console.error('[CONFIG SAVE ERROR]', e.message);
     }
+}
+
+function getDashboardPassword() {
+    return (process.env.DASHBOARD_PASSWORD || config.dashboardPassword || '').trim();
+}
+
+function isAuthRequired() {
+    return Boolean(getDashboardPassword());
+}
+
+function validateToken(token) {
+    if (!isAuthRequired()) return true;
+    if (!token) return false;
+    return activeSessions.has(token);
+}
+
+// Express Security Middleware for protected routes
+function requireAuth(req, res, next) {
+    if (!isAuthRequired()) return next();
+
+    const token = req.headers['x-access-token'] || req.query.token;
+    if (validateToken(token)) {
+        return next();
+    }
+    return res.status(401).json({ success: false, error: 'Unauthorized: Dashboard password required' });
 }
 
 function normalizePhone(rawPhone) {
@@ -302,20 +329,65 @@ const scheduler = new ReminderScheduler({
 });
 
 // -------------------------------------------------------------
-// REST API Routes
+// Authentication Endpoints (Unprotected)
 // -------------------------------------------------------------
-app.get('/api/status', (req, res) => {
+app.get('/api/auth/status', (req, res) => {
+    const token = req.headers['x-access-token'] || req.query.token;
+    const required = isAuthRequired();
+    res.json({
+        authRequired: required,
+        isAuthenticated: !required || validateToken(token)
+    });
+});
+
+app.post('/api/auth/login', (req, res) => {
+    const { password } = req.body || {};
+    const expected = getDashboardPassword();
+
+    if (!expected) {
+        return res.json({ success: true, message: 'No password configured' });
+    }
+
+    if (password && password.trim() === expected) {
+        const token = crypto.randomBytes(32).toString('hex');
+        activeSessions.set(token, { createdAt: Date.now() });
+        console.log('[AUTH] Dashboard unlocked successfully with session token.');
+        return res.json({ success: true, token });
+    }
+
+    return res.status(401).json({ success: false, error: 'Incorrect dashboard password. Please try again.' });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+    const token = req.headers['x-access-token'] || req.query.token;
+    if (token) activeSessions.delete(token);
+    res.json({ success: true, message: 'Logged out successfully' });
+});
+
+// -------------------------------------------------------------
+// Protected Dashboard REST API Routes
+// -------------------------------------------------------------
+app.get('/api/status', requireAuth, (req, res) => {
+    // Mask sensitive dashboard password in API response
+    const { dashboardPassword, ...safeConfig } = config;
     res.json({
         connectionState,
         connectedUser,
         currentQR,
         cloud: cloudSync.getCloudStatus(),
-        config,
+        config: safeConfig,
+        hasPasswordSet: Boolean(getDashboardPassword()),
         scheduler: scheduler.getState()
     });
 });
 
 app.get('/api/events', (req, res) => {
+    // SSE Token validation
+    const token = req.query.token || req.headers['x-access-token'];
+    if (isAuthRequired() && !validateToken(token)) {
+        return res.status(401).send('Unauthorized: Invalid or missing token');
+    }
+
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
@@ -324,6 +396,7 @@ app.get('/api/events', (req, res) => {
     const clientObj = { res };
     sseClients.add(clientObj);
 
+    const { dashboardPassword, ...safeConfig } = config;
     res.write(`data: ${JSON.stringify({
         type: 'INIT',
         data: {
@@ -331,7 +404,8 @@ app.get('/api/events', (req, res) => {
             connectedUser,
             currentQR,
             cloud: cloudSync.getCloudStatus(),
-            config,
+            config: safeConfig,
+            hasPasswordSet: Boolean(getDashboardPassword()),
             scheduler: scheduler.getState()
         }
     })}\n\n`);
@@ -341,24 +415,28 @@ app.get('/api/events', (req, res) => {
     });
 });
 
-app.post('/api/settings', (req, res) => {
+app.post('/api/settings', requireAuth, (req, res) => {
     try {
-        const { timezone, catchUpIfMissed, simulateTyping } = req.body;
+        const { timezone, catchUpIfMissed, simulateTyping, newPassword } = req.body;
         if (timezone) config.timezone = timezone;
         if (catchUpIfMissed !== undefined) config.catchUpIfMissed = Boolean(catchUpIfMissed);
         if (simulateTyping !== undefined) config.simulateTyping = Boolean(simulateTyping);
+        if (newPassword !== undefined) {
+            config.dashboardPassword = String(newPassword).trim();
+        }
 
         saveConfig();
         scheduler.updateConfig(config);
-        broadcastEvent('CONFIG_UPDATE', { config });
-        res.json({ success: true, config });
+        const { dashboardPassword, ...safeConfig } = config;
+        broadcastEvent('CONFIG_UPDATE', { config: safeConfig, hasPasswordSet: Boolean(getDashboardPassword()) });
+        res.json({ success: true, config: safeConfig, hasPasswordSet: Boolean(getDashboardPassword()) });
     } catch (err) {
         res.status(400).json({ success: false, error: err.message });
     }
 });
 
-// Create a new reminder (Arbitrary slots, custom time window, multiple message variations)
-app.post('/api/reminders', (req, res) => {
+// Create a new reminder
+app.post('/api/reminders', requireAuth, (req, res) => {
     try {
         const { title, type, phone, contactName, enabled, slots, oneTime } = req.body;
 
@@ -422,16 +500,17 @@ app.post('/api/reminders', (req, res) => {
 
         saveConfig();
         scheduler.updateConfig(config);
-        broadcastEvent('CONFIG_UPDATE', { config });
+        const { dashboardPassword, ...safeConfig } = config;
+        broadcastEvent('CONFIG_UPDATE', { config: safeConfig });
 
-        res.json({ success: true, reminder: newReminder, config });
+        res.json({ success: true, reminder: newReminder, config: safeConfig });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
 });
 
 // Update an existing reminder
-app.put('/api/reminders/:id', (req, res) => {
+app.put('/api/reminders/:id', requireAuth, (req, res) => {
     try {
         const { id } = req.params;
         const index = (config.reminders || []).findIndex(r => r.id === id);
@@ -478,32 +557,34 @@ app.put('/api/reminders/:id', (req, res) => {
         config.reminders[index] = current;
         saveConfig();
         scheduler.updateConfig(config);
-        broadcastEvent('CONFIG_UPDATE', { config });
+        const { dashboardPassword, ...safeConfig } = config;
+        broadcastEvent('CONFIG_UPDATE', { config: safeConfig });
 
-        res.json({ success: true, reminder: current, config });
+        res.json({ success: true, reminder: current, config: safeConfig });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
 });
 
 // Delete a reminder
-app.delete('/api/reminders/:id', (req, res) => {
+app.delete('/api/reminders/:id', requireAuth, (req, res) => {
     try {
         const { id } = req.params;
         config.reminders = (config.reminders || []).filter(r => r.id !== id);
 
         saveConfig();
         scheduler.updateConfig(config);
-        broadcastEvent('CONFIG_UPDATE', { config });
+        const { dashboardPassword, ...safeConfig } = config;
+        broadcastEvent('CONFIG_UPDATE', { config: safeConfig });
 
-        res.json({ success: true, config });
+        res.json({ success: true, config: safeConfig });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
 });
 
 // Trigger test message
-app.post('/api/reminders/:id/test', async (req, res) => {
+app.post('/api/reminders/:id/test', requireAuth, async (req, res) => {
     try {
         const { id } = req.params;
         const { slotId } = req.body || {};
@@ -519,7 +600,7 @@ app.post('/api/reminders/:id/test', async (req, res) => {
 });
 
 // Re-roll daily plan
-app.post('/api/regenerate-plan', (req, res) => {
+app.post('/api/regenerate-plan', requireAuth, (req, res) => {
     try {
         const current = scheduler.getTimeInZone(config.timezone);
         scheduler.dailyPlan = scheduler.generateNewDailyPlan(current.date);
@@ -532,7 +613,7 @@ app.post('/api/regenerate-plan', (req, res) => {
 });
 
 // Logout / Unpair WhatsApp
-app.post('/api/logout', async (req, res) => {
+app.post('/api/logout', requireAuth, async (req, res) => {
     try {
         console.log('[USER REQUEST] Unpairing WhatsApp device...');
         if (sock) {
@@ -560,6 +641,11 @@ async function bootstrap() {
 
     console.log('\n======================================================');
     console.log(' 🩺 WhatsApp Medicine & Daily Reminder Engine');
+    if (isAuthRequired()) {
+        console.log(' 🔒 Security: Dashboard Password Protection is ACTIVE');
+    } else {
+        console.log(' ⚠️ Security Notice: No DASHBOARD_PASSWORD set. Open access mode.');
+    }
     console.log('======================================================');
 
     await cloudSync.initCloudSync({

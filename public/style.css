@@ -1354,3 +1354,178 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
         bottom: 14px;
     }
 }
+
+/* ============================================================
+   🔒 Lock Screen & Authentication Overlay
+   ============================================================ */
+.login-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: radial-gradient(circle at 50% 30%, rgba(30, 41, 59, 0.92) 0%, rgba(8, 12, 22, 0.98) 100%);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 1;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.login-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 440px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65), 0 0 40px rgba(16, 185, 129, 0.08);
+    border-radius: var(--radius-xl);
+    padding: 36px 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.login-badge-icon {
+    position: relative;
+    width: 68px;
+    height: 68px;
+    border-radius: var(--radius-full);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(6, 182, 212, 0.2));
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+}
+
+.login-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+}
+
+.login-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 24px;
+    max-width: 360px;
+}
+
+.login-form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.login-input-group {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.login-input-group input {
+    width: 100%;
+    padding: 13px 44px 13px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-md);
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: var(--transition-fast);
+}
+
+.login-input-group input:focus {
+    outline: none;
+    border-color: var(--accent-emerald);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.btn-toggle-eye {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.05rem;
+    padding: 6px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.btn-toggle-eye:hover {
+    opacity: 1;
+}
+
+.login-error-msg {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: rgba(239, 68, 68, 0.14);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: var(--radius-sm);
+    color: #fca5a5;
+    font-size: 0.82rem;
+    text-align: left;
+}
+
+.login-error-msg.hidden {
+    display: none;
+}
+
+.btn-unlock {
+    padding: 13px;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.login-footer {
+    margin-top: 24px;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.btn-lock-dashboard {
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #cbd5e1;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-lock-dashboard:hover {
+    border-color: var(--accent-cyan);
+    color: #ffffff;
+    background: rgba(6, 182, 212, 0.12);
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    15%, 45%, 75% { transform: translateX(-7px); }
+    30%, 60%, 90% { transform: translateX(7px); }
+}
+
+.shake {
+    animation: shake 0.4s ease-in-out;
+}
+

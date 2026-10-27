@@ -45,6 +45,10 @@
                     <span id="waStatusText">Checking WA...</span>
                 </div>
 
+                <button id="btnLockDashboard" class="btn btn-sm btn-outline btn-lock-dashboard hidden" title="Lock Dashboard">
+                    <span>🔒 Lock</span>
+                </button>
+
                 <button id="btnOpenNewModal" class="btn btn-primary btn-add-reminder">
                     <span>+ New Reminder</span>
                 </button>
@@ -140,6 +144,12 @@
                                     <input type="checkbox" id="chkCatchUp" checked>
                                     <span>Catch-up Dispatch (Send if server wakes up during slot)</span>
                                 </label>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="inputDashboardPassword">Dashboard Password Protection 🔒</label>
+                                <input type="password" id="inputDashboardPassword" placeholder="Set or change password (leave blank to keep unchanged)">
+                                <small class="form-help">Protects your WhatsApp session & reminders from unauthorized access.</small>
                             </div>
 
                             <button type="submit" id="btnSaveGlobalSettings" class="btn btn-secondary w-full">
@@ -347,6 +357,34 @@
                     <button type="submit" id="btnSaveReminderModal" class="btn btn-primary">Save Reminder</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- 🔒 Lock Screen / Password Modal Overlay -->
+    <div id="loginOverlay" class="login-overlay hidden">
+        <div class="login-card glass-card">
+            <div class="login-badge-icon">
+                <span class="lock-emoji">🔒</span>
+                <div class="pulse-ring"></div>
+            </div>
+            <h2 class="login-title">Dashboard Protected</h2>
+            <p class="login-subtitle">An active WhatsApp session is paired with this dispatcher. Enter your password to access the control panel.</p>
+
+            <form id="loginForm" class="login-form">
+                <div class="login-input-group">
+                    <input type="password" id="loginPasswordInput" placeholder="Enter dashboard password" required autocomplete="current-password" autofocus>
+                    <button type="button" id="btnTogglePasswordVis" class="btn-toggle-eye" aria-label="Toggle password visibility">👁️</button>
+                </div>
+                <div id="loginErrorMsg" class="login-error-msg hidden">
+                    <span>⚠️</span> <span id="loginErrorText">Incorrect password. Please try again.</span>
+                </div>
+                <button type="submit" id="btnLoginSubmit" class="btn btn-primary w-full btn-unlock">
+                    <span>Unlock Dashboard 🚀</span>
+                </button>
+            </form>
+            <div class="login-footer">
+                <span>🛡️ PillPulse Autonomous Baileys Engine</span>
+            </div>
         </div>
     </div>
 

@@ -19,11 +19,71 @@ let appState = {
     }
 };
 
+const AUTH_TOKEN_KEY = 'pillpulse_auth_token';
+
+function getAuthToken() {
+    return localStorage.getItem(AUTH_TOKEN_KEY) || '';
+}
+
+function setAuthToken(token) {
+    if (token) {
+        localStorage.setItem(AUTH_TOKEN_KEY, token);
+    } else {
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+    }
+}
+
+function showLockScreen() {
+    const loginOverlay = document.getElementById('loginOverlay');
+    const btnLockDashboard = document.getElementById('btnLockDashboard');
+    if (loginOverlay) {
+        loginOverlay.classList.remove('hidden');
+        const pwdInput = document.getElementById('loginPasswordInput');
+        if (pwdInput) {
+            pwdInput.value = '';
+            setTimeout(() => pwdInput.focus(), 150);
+        }
+    }
+    if (btnLockDashboard) btnLockDashboard.classList.add('hidden');
+    if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+    }
+}
+
+function hideLockScreen() {
+    const loginOverlay = document.getElementById('loginOverlay');
+    const btnLockDashboard = document.getElementById('btnLockDashboard');
+    if (loginOverlay) loginOverlay.classList.add('hidden');
+    if (appState.hasPasswordSet) {
+        if (btnLockDashboard) btnLockDashboard.classList.remove('hidden');
+    }
+}
+
+async function authFetch(url, options = {}) {
+    const token = getAuthToken();
+    const headers = {
+        ...(options.headers || {})
+    };
+    if (token) {
+        headers['x-access-token'] = token;
+    }
+
+    const res = await fetch(url, { ...options, headers });
+    if (res.status === 401) {
+        setAuthToken('');
+        showLockScreen();
+        throw new Error('Authentication required');
+    }
+    return res;
+}
+
 let activeFilter = 'all';
 let eventSource = null;
 let clockInterval = null;
 
 // DOM Elements
+const btnLockDashboard = document.getElementById('btnLockDashboard');
 const waDot = document.getElementById('waDot');
 const waStatusText = document.getElementById('waStatusText');
 const cloudDot = document.getElementById('cloudDot');
@@ -757,7 +817,7 @@ reminderForm.addEventListener('submit', async (e) => {
         const url = id ? `/api/reminders/${id}` : '/api/reminders';
         const method = id ? 'PUT' : 'POST';
 
-        const res = await fetch(url, {
+        const res = await authFetch(url, {
             method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -774,7 +834,9 @@ reminderForm.addEventListener('submit', async (e) => {
             showToast(data.error || 'Failed to save reminder', 'error');
         }
     } catch (err) {
-        showToast(err.message, 'error');
+        if (err.message !== 'Authentication required') {
+            showToast(err.message, 'error');
+        }
     } finally {
         saveBtn.disabled = false;
         saveBtn.textContent = 'Save Reminder';
@@ -788,7 +850,7 @@ async function handleDeleteReminder(reminderId) {
     if (!confirmDelete) return;
 
     try {
-        const res = await fetch(`/api/reminders/${reminderId}`, { method: 'DELETE' });
+        const res = await authFetch(`/api/reminders/${reminderId}`, { method: 'DELETE' });
         const data = await res.json();
         if (data.success) {
             showToast('Reminder deleted successfully! 🗑️', 'info');
@@ -799,7 +861,9 @@ async function handleDeleteReminder(reminderId) {
             showToast(data.error || 'Failed deleting reminder', 'error');
         }
     } catch (err) {
-        showToast(err.message, 'error');
+        if (err.message !== 'Authentication required') {
+            showToast(err.message, 'error');
+        }
     }
 }
 
@@ -807,7 +871,7 @@ async function handleDeleteReminder(reminderId) {
 async function handleTestReminder(reminderId) {
     showToast('Simulating typing & sending test to WhatsApp... ⏳', 'info');
     try {
-        const res = await fetch(`/api/reminders/${reminderId}/test`, { method: 'POST' });
+        const res = await authFetch(`/api/reminders/${reminderId}/test`, { method: 'POST' });
         const data = await res.json();
         if (data.success) {
             showToast('Test reminder delivered to recipient WhatsApp! 🚀', 'success');
@@ -816,7 +880,9 @@ async function handleTestReminder(reminderId) {
             showToast(data.error || 'Failed sending test reminder', 'error');
         }
     } catch (err) {
-        showToast(err.message, 'error');
+        if (err.message !== 'Authentication required') {
+            showToast(err.message, 'error');
+        }
     }
 }
 
@@ -837,26 +903,44 @@ globalSettingsForm.addEventListener('submit', async (e) => {
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
 
+    const inputDashboardPassword = document.getElementById('inputDashboardPassword');
+    const newPasswordVal = inputDashboardPassword ? inputDashboardPassword.value.trim() : '';
+
+    const payload = {
+        timezone: selTimezone.value,
+        catchUpIfMissed: chkCatchUp.checked,
+        simulateTyping: chkTyping.checked
+    };
+
+    if (newPasswordVal) {
+        payload.newPassword = newPasswordVal;
+    }
+
     try {
-        const res = await fetch('/api/settings', {
+        const res = await authFetch('/api/settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                timezone: selTimezone.value,
-                catchUpIfMissed: chkCatchUp.checked,
-                simulateTyping: chkTyping.checked
-            })
+            body: JSON.stringify(payload)
         });
         const data = await res.json();
         if (data.success) {
-            showToast('System settings updated! ⚙️', 'success');
+            if (newPasswordVal) {
+                showToast('Settings & Dashboard Password updated! 🔒', 'success');
+                inputDashboardPassword.value = '';
+                btnLockDashboard?.classList.remove('hidden');
+            } else {
+                showToast('System settings updated! ⚙️', 'success');
+            }
             appState.config = data.config;
+            if (data.hasPasswordSet !== undefined) appState.hasPasswordSet = data.hasPasswordSet;
             startClock();
         } else {
             showToast(data.error || 'Failed saving settings', 'error');
         }
     } catch (err) {
-        showToast(err.message, 'error');
+        if (err.message !== 'Authentication required') {
+            showToast(err.message, 'error');
+        }
     } finally {
         saveBtn.disabled = false;
         saveBtn.textContent = 'Save System Settings';
@@ -867,7 +951,7 @@ globalSettingsForm.addEventListener('submit', async (e) => {
 btnRerollPlan.addEventListener('click', async () => {
     btnRerollPlan.disabled = true;
     try {
-        const res = await fetch('/api/regenerate-plan', { method: 'POST' });
+        const res = await authFetch('/api/regenerate-plan', { method: 'POST' });
         const data = await res.json();
         if (data.success) {
             showToast('Re-rolled today\'s random minutes! 🎲', 'success');
@@ -877,7 +961,9 @@ btnRerollPlan.addEventListener('click', async () => {
             showToast(data.error || 'Failed to re-roll schedule', 'error');
         }
     } catch (err) {
-        showToast(err.message, 'error');
+        if (err.message !== 'Authentication required') {
+            showToast(err.message, 'error');
+        }
     } finally {
         btnRerollPlan.disabled = false;
     }
@@ -892,7 +978,7 @@ btnUnpair.addEventListener('click', async () => {
     btnUnpair.textContent = 'Unpairing...';
 
     try {
-        const res = await fetch('/api/logout', { method: 'POST' });
+        const res = await authFetch('/api/logout', { method: 'POST' });
         const data = await res.json();
         if (data.success) {
             showToast('Device unpaired. Loading fresh QR...', 'info');
@@ -900,17 +986,124 @@ btnUnpair.addEventListener('click', async () => {
             showToast(data.error || 'Failed to unpair device', 'error');
         }
     } catch (err) {
-        showToast(err.message, 'error');
+        if (err.message !== 'Authentication required') {
+            showToast(err.message, 'error');
+        }
     } finally {
         btnUnpair.disabled = false;
         btnUnpair.textContent = 'Unpair';
     }
 });
 
+// -------------------------------------------------------------
+// Authentication & Lock Screen Controls
+// -------------------------------------------------------------
+const loginForm = document.getElementById('loginForm');
+const loginPasswordInput = document.getElementById('loginPasswordInput');
+const loginErrorMsg = document.getElementById('loginErrorMsg');
+const loginErrorText = document.getElementById('loginErrorText');
+const btnLoginSubmit = document.getElementById('btnLoginSubmit');
+const btnTogglePasswordVis = document.getElementById('btnTogglePasswordVis');
+
+async function checkAuthStatus() {
+    try {
+        const token = getAuthToken();
+        const headers = token ? { 'x-access-token': token } : {};
+        const res = await fetch('/api/auth/status', { headers });
+        const data = await res.json();
+
+        if (data.authRequired) {
+            appState.hasPasswordSet = true;
+            if (!data.isAuthenticated) {
+                showLockScreen();
+                return false;
+            } else {
+                hideLockScreen();
+                btnLockDashboard?.classList.remove('hidden');
+                return true;
+            }
+        } else {
+            appState.hasPasswordSet = false;
+            hideLockScreen();
+            btnLockDashboard?.classList.add('hidden');
+            return true;
+        }
+    } catch (_) {
+        return true;
+    }
+}
+
+loginForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const password = loginPasswordInput?.value?.trim();
+    if (!password) return;
+
+    btnLoginSubmit.disabled = true;
+    btnLoginSubmit.innerHTML = '<span>Verifying... ⏳</span>';
+    loginErrorMsg.classList.add('hidden');
+
+    try {
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            if (data.token) {
+                setAuthToken(data.token);
+            }
+            appState.hasPasswordSet = true;
+            hideLockScreen();
+            showToast('Dashboard unlocked! 🚀', 'success');
+            connectSSE();
+            fetchStatus();
+        } else {
+            loginErrorText.textContent = data.error || 'Incorrect password. Please try again.';
+            loginErrorMsg.classList.remove('hidden');
+            const card = document.querySelector('.login-card');
+            card?.classList.add('shake');
+            setTimeout(() => card?.classList.remove('shake'), 450);
+            loginPasswordInput?.focus();
+            loginPasswordInput?.select();
+        }
+    } catch (err) {
+        loginErrorText.textContent = err.message || 'Connection failed. Please try again.';
+        loginErrorMsg.classList.remove('hidden');
+    } finally {
+        btnLoginSubmit.disabled = false;
+        btnLoginSubmit.innerHTML = '<span>Unlock Dashboard 🚀</span>';
+    }
+});
+
+btnTogglePasswordVis?.addEventListener('click', () => {
+    if (!loginPasswordInput) return;
+    if (loginPasswordInput.type === 'password') {
+        loginPasswordInput.type = 'text';
+        btnTogglePasswordVis.textContent = '🙈';
+    } else {
+        loginPasswordInput.type = 'password';
+        btnTogglePasswordVis.textContent = '👁️';
+    }
+});
+
+btnLockDashboard?.addEventListener('click', async () => {
+    try {
+        await authFetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+    } finally {
+        setAuthToken('');
+        showLockScreen();
+        showToast('Dashboard locked 🔒', 'info');
+    }
+});
+
 // SSE Stream
 function connectSSE() {
     if (eventSource) eventSource.close();
-    eventSource = new EventSource('/api/events');
+    const token = getAuthToken();
+    const sseUrl = token ? `/api/events?token=${encodeURIComponent(token)}` : '/api/events';
+    eventSource = new EventSource(sseUrl);
 
     eventSource.onmessage = (e) => {
         try {
@@ -918,6 +1111,9 @@ function connectSSE() {
 
             if (type === 'INIT') {
                 appState = { ...appState, ...data };
+                if (data.hasPasswordSet) {
+                    btnLockDashboard?.classList.remove('hidden');
+                }
                 renderDeviceState();
                 renderSystemSettings();
                 renderRemindersList();
@@ -933,6 +1129,10 @@ function connectSSE() {
                 renderDeviceState();
             } else if (type === 'CONFIG_UPDATE') {
                 appState.config = data.config;
+                if (data.hasPasswordSet !== undefined) {
+                    appState.hasPasswordSet = data.hasPasswordSet;
+                    if (data.hasPasswordSet) btnLockDashboard?.classList.remove('hidden');
+                }
                 renderSystemSettings();
                 renderRemindersList();
                 startClock();
@@ -951,15 +1151,21 @@ function connectSSE() {
     };
 
     eventSource.onerror = () => {
-        setTimeout(fetchStatus, 3000);
+        setTimeout(async () => {
+            const authed = await checkAuthStatus();
+            if (authed) fetchStatus();
+        }, 3000);
     };
 }
 
 async function fetchStatus() {
     try {
-        const res = await fetch('/api/status');
+        const res = await authFetch('/api/status');
         const data = await res.json();
         appState = { ...appState, ...data };
+        if (data.hasPasswordSet) {
+            btnLockDashboard?.classList.remove('hidden');
+        }
         renderDeviceState();
         renderSystemSettings();
         renderRemindersList();
@@ -969,8 +1175,11 @@ async function fetchStatus() {
     } catch (_) {}
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-    connectSSE();
-    fetchStatus();
+window.addEventListener('DOMContentLoaded', async () => {
     startClock();
+    const isAuthenticated = await checkAuthStatus();
+    if (isAuthenticated) {
+        connectSSE();
+        fetchStatus();
+    }
 });
