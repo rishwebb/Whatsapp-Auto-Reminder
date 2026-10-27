@@ -94,13 +94,13 @@ body {
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 20px;
+    gap: 18px;
     padding: 16px 24px;
     background: rgba(15, 23, 42, 0.6);
     border: 1px solid var(--border-color);
     backdrop-filter: blur(20px);
     border-radius: var(--radius-lg);
-    margin-bottom: 28px;
+    margin-bottom: 24px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
@@ -111,16 +111,17 @@ body {
 }
 
 .brand-icon {
-    width: 52px;
-    height: 52px;
+    width: 50px;
+    height: 50px;
     border-radius: var(--radius-md);
     background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.15));
     border: 1px solid rgba(16, 185, 129, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 26px;
+    font-size: 24px;
     position: relative;
+    flex-shrink: 0;
 }
 
 .pulse-ring {
@@ -139,16 +140,17 @@ body {
 }
 
 .brand-title {
-    font-size: 1.45rem;
+    font-size: 1.4rem;
     font-weight: 800;
     letter-spacing: -0.02em;
     display: flex;
     align-items: center;
-    gap: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .badge-sub {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     padding: 3px 8px;
     border-radius: var(--radius-sm);
     background: rgba(16, 185, 129, 0.15);
@@ -159,25 +161,26 @@ body {
 }
 
 .brand-subtitle {
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     color: var(--text-muted);
 }
 
 .header-status-group {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     flex-wrap: wrap;
 }
 
 .btn-add-reminder {
-    padding: 9px 18px;
-    font-size: 0.9rem;
+    padding: 10px 18px;
+    font-size: 0.88rem;
     font-weight: 700;
     box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+    white-space: nowrap;
 }
 
-/* Live Clock */
+/* Live Clock Card */
 .live-clock-card {
     background: rgba(0, 0, 0, 0.45);
     border: 1px solid var(--border-color);
@@ -189,7 +192,7 @@ body {
 }
 
 .clock-label {
-    font-size: 0.65rem;
+    font-size: 0.64rem;
     color: var(--text-sub);
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -197,13 +200,13 @@ body {
 
 .clock-time {
     font-family: var(--font-mono);
-    font-size: 1.15rem;
+    font-size: 1.1rem;
     font-weight: 600;
     color: #e2e8f0;
 }
 
 .clock-tz {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     color: var(--accent-cyan);
 }
 
@@ -214,11 +217,12 @@ body {
     gap: 8px;
     padding: 8px 14px;
     border-radius: var(--radius-full);
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 600;
     background: rgba(0, 0, 0, 0.35);
     border: 1px solid var(--border-color);
     transition: all 0.3s ease;
+    white-space: nowrap;
 }
 
 .indicator-dot {
@@ -226,6 +230,7 @@ body {
     height: 9px;
     border-radius: 50%;
     background: var(--text-sub);
+    flex-shrink: 0;
 }
 
 .dot-green { background: #10b981; box-shadow: 0 0 10px #10b981; }
@@ -238,12 +243,6 @@ body {
     display: grid;
     grid-template-columns: 380px 1fr;
     gap: 24px;
-}
-
-@media (max-width: 1100px) {
-    .dashboard-grid {
-        grid-template-columns: 1fr;
-    }
 }
 
 .grid-col {
@@ -346,6 +345,7 @@ body {
     display: block;
     width: 200px;
     height: 200px;
+    max-width: 100%;
 }
 
 .qr-scan-line {
@@ -371,6 +371,7 @@ body {
     font-size: 0.82rem;
     color: var(--text-muted);
     line-height: 1.5;
+    width: 100%;
 }
 
 .connected-badge {
@@ -398,6 +399,7 @@ body {
     align-items: center;
     justify-content: center;
     box-shadow: 0 0 15px var(--primary-glow);
+    flex-shrink: 0;
 }
 
 .connected-info h3 {
@@ -410,6 +412,7 @@ body {
     font-family: var(--font-mono);
     font-size: 0.88rem;
     color: var(--accent-cyan);
+    word-break: break-all;
 }
 
 .stealth-shield {
@@ -423,6 +426,7 @@ body {
     font-size: 0.8rem;
     text-align: left;
     color: #cbd5e1;
+    width: 100%;
 }
 
 .stealth-shield strong {
@@ -459,10 +463,10 @@ input[type="text"], input[type="date"], input[type="time"], select, textarea {
     background: rgba(0, 0, 0, 0.45);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
-    padding: 9px 12px;
+    padding: 10px 14px;
     color: #f8fafc;
     font-family: inherit;
-    font-size: 0.88rem;
+    font-size: 0.9rem;
     transition: all 0.2s ease;
 }
 
@@ -495,18 +499,23 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
 .filter-pills {
     display: flex;
     gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
 }
 
 .pill {
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-full);
-    padding: 4px 12px;
+    padding: 5px 14px;
     color: var(--text-muted);
     font-size: 0.76rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .pill:hover {
@@ -558,7 +567,8 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
 .reminder-meta-group {
     display: flex;
     align-items: center;
-    gap: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .type-tag {
@@ -567,6 +577,7 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
     padding: 3px 8px;
     border-radius: var(--radius-sm);
     text-transform: uppercase;
+    white-space: nowrap;
 }
 
 .type-tag.continuous {
@@ -590,9 +601,10 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
 .recipient-badge {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     font-size: 0.85rem;
     color: var(--text-muted);
+    flex-wrap: wrap;
 }
 
 .recipient-badge .phone {
@@ -616,6 +628,7 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
     color: #e2e8f0;
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 6px;
 }
 
@@ -629,8 +642,9 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
     color: #c084fc;
     font-size: 0.7rem;
     font-weight: 700;
-    padding: 2px 6px;
+    padding: 2px 7px;
     border-radius: var(--radius-full);
+    white-space: nowrap;
 }
 
 .reminder-content-box {
@@ -639,6 +653,7 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
     border-radius: var(--radius-sm);
     padding: 10px 14px;
     font-size: 0.84rem;
+    word-break: break-word;
 }
 
 .one-time-summary {
@@ -658,9 +673,10 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
     padding-top: 12px;
+    flex-wrap: wrap;
 }
 
 /* Today's Schedule Timeline */
@@ -690,17 +706,21 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
     display: flex;
     flex-direction: column;
     gap: 3px;
+    flex: 1;
+    min-width: 0;
 }
 
 .slot-card-title {
     font-size: 0.92rem;
     font-weight: 700;
     color: #f1f5f9;
+    word-break: break-word;
 }
 
 .slot-card-sub {
     font-size: 0.75rem;
     color: var(--text-muted);
+    word-break: break-word;
 }
 
 .slot-target-bubble {
@@ -711,6 +731,7 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
     border: 1px solid rgba(6, 182, 212, 0.25);
     padding: 6px 14px;
     border-radius: var(--radius-sm);
+    flex-shrink: 0;
 }
 
 .target-label {
@@ -725,6 +746,7 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
     font-size: 1.05rem;
     font-weight: 700;
     color: #ffffff;
+    white-space: nowrap;
 }
 
 .slot-status-badge {
@@ -732,6 +754,8 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
     border-radius: var(--radius-full);
     font-size: 0.74rem;
     font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .status-badge-delivered {
@@ -762,7 +786,7 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
     align-items: center;
     justify-content: center;
     z-index: 100;
-    padding: 20px;
+    padding: 16px;
 }
 
 .modal-card {
@@ -771,7 +795,7 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
     border-radius: var(--radius-lg);
     width: 100%;
     max-width: 740px;
-    max-height: 92vh;
+    max-height: 90vh;
     overflow-y: auto;
     box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
     animation: modalSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -786,7 +810,7 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 24px;
+    padding: 18px 24px;
     border-bottom: 1px solid var(--border-color);
 }
 
@@ -803,6 +827,7 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
     font-size: 1.6rem;
     cursor: pointer;
     line-height: 1;
+    padding: 4px;
 }
 
 .btn-close:hover { color: #ffffff; }
@@ -858,7 +883,7 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
     gap: 10px;
 }
 
-.type-icon { font-size: 1.4rem; }
+.type-icon { font-size: 1.4rem; flex-shrink: 0; }
 
 .type-card-content strong {
     font-size: 0.92rem;
@@ -902,6 +927,8 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .window-inputs-row {
@@ -912,13 +939,14 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
     padding: 8px 12px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-color);
+    flex-wrap: wrap;
 }
 
 .window-inputs-row input[type="time"] {
     width: auto;
     font-family: var(--font-mono);
     font-size: 0.88rem;
-    padding: 4px 8px;
+    padding: 6px 10px;
 }
 
 .window-span-badge {
@@ -943,7 +971,7 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
 
 .variation-row textarea {
     flex: 1;
-    min-height: 54px;
+    min-height: 52px;
     resize: vertical;
     font-size: 0.85rem;
     padding: 8px 12px;
@@ -958,6 +986,7 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
     cursor: pointer;
     font-size: 0.8rem;
     transition: all 0.2s;
+    flex-shrink: 0;
 }
 
 .btn-remove-variation:hover {
@@ -978,6 +1007,7 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
     cursor: pointer;
     border: none;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
 }
 
 .btn-primary {
@@ -1024,8 +1054,8 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
 }
 
 .btn-sm {
-    padding: 5px 10px;
-    font-size: 0.75rem;
+    padding: 6px 11px;
+    font-size: 0.76rem;
 }
 
 .w-full { width: 100%; }
@@ -1056,12 +1086,16 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
     color: var(--text-muted);
 }
 
-.table-responsive { overflow-x: auto; }
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
 
 .history-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.82rem;
+    min-width: 460px;
 }
 
 .history-table th {
@@ -1088,18 +1122,22 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
 /* Toast */
 .toast-container {
     position: fixed;
-    bottom: 24px;
-    right: 24px;
+    bottom: 20px;
+    right: 20px;
+    left: 20px;
+    max-width: 400px;
+    margin-left: auto;
     z-index: 1000;
     display: flex;
     flex-direction: column;
     gap: 10px;
+    pointer-events: none;
 }
 
 .toast {
     background: #0f172a;
     border: 1px solid var(--border-color);
-    padding: 12px 18px;
+    padding: 12px 16px;
     border-radius: var(--radius-sm);
     color: #ffffff;
     font-size: 0.88rem;
@@ -1107,6 +1145,7 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
     display: flex;
     align-items: center;
     gap: 10px;
+    pointer-events: auto;
     animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1115,8 +1154,203 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
 .toast-info    { border-left: 4px solid var(--accent-cyan); }
 
 @keyframes toastIn {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
 .hidden { display: none !important; }
+
+/* ============================================================ */
+/* 📱 MOBILE RESPONSIVENESS BREAKPOINTS                         */
+/* ============================================================ */
+
+/* Tablet & Smaller Laptops (<= 1024px) */
+@media (max-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+}
+
+/* Tablet Portrait & Mobile Landscape (<= 768px) */
+@media (max-width: 768px) {
+    .app-container {
+        padding: 14px 16px 50px 16px;
+    }
+
+    .app-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+        padding: 16px;
+    }
+
+    .brand {
+        gap: 12px;
+    }
+
+    .brand-title {
+        font-size: 1.25rem;
+    }
+
+    .header-status-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .live-clock-card {
+        text-align: left;
+    }
+
+    .btn-add-reminder {
+        grid-column: span 2;
+        width: 100%;
+        padding: 12px;
+        font-size: 0.95rem;
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .type-selector-group {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .card-header {
+        padding: 14px 16px;
+    }
+
+    .card-body {
+        padding: 16px;
+    }
+
+    /* Stack slot timeline cards for readability on mobile */
+    .slot-card {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .slot-target-bubble {
+        flex-direction: row;
+        justify-content: space-between;
+        width: 100%;
+        padding: 8px 14px;
+    }
+
+    .modal-card {
+        max-height: 94vh;
+        border-radius: var(--radius-md);
+    }
+
+    .modal-header {
+        padding: 14px 18px;
+    }
+
+    .modal-body {
+        padding: 16px;
+    }
+
+    .modal-footer {
+        padding: 14px 18px;
+        flex-direction: column-reverse;
+        gap: 8px;
+    }
+
+    .modal-footer .btn {
+        width: 100%;
+        padding: 11px;
+    }
+
+    .window-inputs-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .window-inputs-row input[type="time"] {
+        width: 100%;
+    }
+
+    .window-span-badge {
+        margin-left: 0;
+        text-align: right;
+    }
+
+    .modal-slot-name {
+        width: 100% !important;
+    }
+
+    .modal-slot-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .reminder-action-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .reminder-action-bar > div:last-child {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .reminder-action-bar .btn {
+        flex: 1;
+        padding: 8px 6px;
+        font-size: 0.74rem;
+    }
+}
+
+/* Small Mobile Screens (<= 480px) */
+@media (max-width: 480px) {
+    .app-container {
+        padding: 10px 10px 40px 10px;
+    }
+
+    .brand-title {
+        font-size: 1.15rem;
+    }
+
+    .brand-subtitle {
+        font-size: 0.74rem;
+    }
+
+    .header-status-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .status-pill {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .qr-frame img {
+        width: 170px;
+        height: 170px;
+    }
+
+    .filter-pills {
+        width: 100%;
+    }
+
+    .btn {
+        min-height: 40px;
+    }
+
+    .toast-container {
+        left: 10px;
+        right: 10px;
+        bottom: 14px;
+    }
+}
