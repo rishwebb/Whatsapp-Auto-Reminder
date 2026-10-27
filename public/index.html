@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PillPulse — WhatsApp Multi-Target Reminder & Auto-Message</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+    <div class="ambient-glow glow-3"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="brand-icon">
+                    <span>💊</span>
+                    <div class="pulse-ring"></div>
+                </div>
+                <div>
+                    <h1 class="brand-title">PillPulse <span class="badge-sub">Multi-Target WA</span></h1>
+                    <p class="brand-subtitle">Continuous Daily Routines & Scheduled One-Time Auto Messages</p>
+                </div>
+            </div>
+
+            <div class="header-status-group">
+                <div class="live-clock-card" id="clockCard">
+                    <span class="clock-label">Local Time</span>
+                    <div class="clock-time" id="liveClock">--:--:--</div>
+                    <span class="clock-tz" id="liveTz">Asia/Kolkata</span>
+                </div>
+
+                <div class="status-pill cloud-pill" id="cloudStatusPill">
+                    <span class="indicator-dot" id="cloudDot"></span>
+                    <span id="cloudStatusText">Connecting Cloud...</span>
+                </div>
+
+                <div class="status-pill wa-pill" id="waStatusPill">
+                    <span class="indicator-dot" id="waDot"></span>
+                    <span id="waStatusText">Checking WA...</span>
+                </div>
+
+                <button id="btnOpenNewModal" class="btn btn-primary btn-add-reminder">
+                    <span>+ New Reminder</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Notification Toast -->
+        <div id="toastContainer" class="toast-container"></div>
+
+        <!-- Dashboard Grid Layout -->
+        <main class="dashboard-grid">
+            <!-- Left Column: WhatsApp Device & Global Settings & History -->
+            <section class="grid-col left-col">
+                <!-- WhatsApp Device Card -->
+                <div class="glass-card" id="deviceCard">
+                    <div class="card-header">
+                        <div class="card-title-group">
+                            <span class="card-icon">📱</span>
+                            <h2>WhatsApp Account</h2>
+                        </div>
+                        <button id="btnUnpair" class="btn btn-sm btn-outline-danger hidden">Unpair</button>
+                    </div>
+
+                    <div class="card-body">
+                        <div id="waConnectingView" class="view-state">
+                            <div class="spinner"></div>
+                            <p class="state-text">Connecting WhatsApp engine...</p>
+                        </div>
+
+                        <div id="waQrView" class="view-state hidden">
+                            <div class="qr-frame">
+                                <img id="qrImage" src="" alt="WhatsApp QR Code">
+                                <div class="qr-scan-line"></div>
+                            </div>
+                            <div class="qr-instructions">
+                                <p class="qr-step">1. Open WhatsApp on your phone</p>
+                                <p class="qr-step">2. Tap <strong>Linked Devices</strong> > <strong>Link a device</strong></p>
+                                <p class="qr-step">3. Scan this QR code</p>
+                            </div>
+                        </div>
+
+                        <div id="waConnectedView" class="view-state hidden">
+                            <div class="connected-badge">
+                                <div class="connected-avatar">✓</div>
+                                <div class="connected-info">
+                                    <h3 id="connectedName">WhatsApp Connected</h3>
+                                    <p id="connectedPhone" class="mono-text">+00 00000 00000</p>
+                                </div>
+                            </div>
+                            <div class="stealth-shield">
+                                <span class="shield-icon">🛡️</span>
+                                <div>
+                                    <strong>Permanent Stealth Shield Active</strong>
+                                    <p>Offline status enforced so you never show as "Online 24/7".</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Global System Settings Card -->
+                <div class="glass-card" id="systemSettingsCard">
+                    <div class="card-header">
+                        <div class="card-title-group">
+                            <span class="card-icon">⚙️</span>
+                            <h2>System Settings</h2>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <form id="globalSettingsForm">
+                            <div class="form-group">
+                                <label for="selTimezone">Timezone</label>
+                                <select id="selTimezone">
+                                    <option value="Asia/Kolkata">India (IST - UTC+5:30)</option>
+                                    <option value="Asia/Dhaka">Bangladesh (BST - UTC+6:00)</option>
+                                    <option value="Asia/Dubai">Dubai (GST - UTC+4:00)</option>
+                                    <option value="Europe/London">London (GMT/BST)</option>
+                                    <option value="America/New_York">New York (EST/EDT)</option>
+                                    <option value="America/Los_Angeles">Los Angeles (PST/PDT)</option>
+                                    <option value="UTC">Universal UTC</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="chkCatchUp" checked>
+                                    <span>Catch-up Dispatch (Send if server wakes up during slot)</span>
+                                </label>
+                            </div>
+
+                            <button type="submit" id="btnSaveGlobalSettings" class="btn btn-secondary w-full">
+                                <span>Save System Settings</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Delivery History Card -->
+                <div class="glass-card" id="historyCard">
+                    <div class="card-header">
+                        <div class="card-title-group">
+                            <span class="card-icon">📜</span>
+                            <h2>Delivery Logs</h2>
+                        </div>
+                        <span class="badge-counter" id="historyCounter">0 Delivered</span>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="history-table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Recipient</th>
+                                        <th>Message</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historyTableBody">
+                                    <tr>
+                                        <td colspan="4" class="empty-state">No reminders sent yet.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Column: Today's Timeline & Reminders Manager -->
+            <section class="grid-col right-col">
+                <!-- Today's Live Schedule Timeline -->
+                <div class="glass-card" id="scheduleCard">
+                    <div class="card-header">
+                        <div class="card-title-group">
+                            <span class="card-icon">🎯</span>
+                            <div>
+                                <h2>Today's Timetable</h2>
+                                <span class="card-meta" id="planDateBadge">Loading timetable...</span>
+                            </div>
+                        </div>
+                        <button id="btnRerollPlan" class="btn btn-sm btn-outline" title="Re-randomize minutes for today">
+                            <span>🎲 Re-roll Times</span>
+                        </button>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="slots-timeline" id="slotsTimeline">
+                            <!-- Injected by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configured Reminders Header & Filter -->
+                <div class="glass-card" id="remindersListCard">
+                    <div class="card-header">
+                        <div class="card-title-group">
+                            <span class="card-icon">📋</span>
+                            <h2>Configured Reminders & Targets</h2>
+                        </div>
+                        <div class="filter-pills">
+                            <button class="pill active" data-filter="all">All (<span id="countAll">0</span>)</button>
+                            <button class="pill" data-filter="continuous">Daily (<span id="countContinuous">0</span>)</button>
+                            <button class="pill" data-filter="one_time">One-Time (<span id="countOneTime">0</span>)</button>
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        <div id="remindersContainer" class="reminders-list">
+                            <!-- Injected by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal: Add / Edit Reminder -->
+    <div id="reminderModal" class="modal-backdrop hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add New Reminder</h2>
+                <button type="button" id="btnCloseModal" class="btn-close">&times;</button>
+            </div>
+
+            <form id="reminderForm">
+                <input type="hidden" id="editReminderId" value="">
+
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group flex-2">
+                            <label for="inputTitle">Reminder Title / Label *</label>
+                            <input type="text" id="inputTitle" placeholder="e.g. Mom's Medicine Routine, Rahul's Birthday" required>
+                        </div>
+                        <div class="form-group flex-1">
+                            <label for="inputEnabled">Status</label>
+                            <select id="inputEnabled">
+                                <option value="true">Active</option>
+                                <option value="false">Paused</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group flex-1">
+                            <label for="inputPhone">WhatsApp Phone Number *</label>
+                            <input type="text" id="inputPhone" placeholder="e.g. 919876543210" required>
+                            <small class="form-help">Country code + digits only (e.g. 91 for India)</small>
+                        </div>
+
+                        <div class="form-group flex-1">
+                            <label for="inputContactName">Recipient Name / Alias</label>
+                            <input type="text" id="inputContactName" placeholder="e.g. Mom / Bestie">
+                        </div>
+                    </div>
+
+                    <!-- Type Selector: Continuous vs One-Time -->
+                    <div class="form-group">
+                        <label>Reminder Mode *</label>
+                        <div class="type-selector-group">
+                            <label class="type-card" id="typeCardContinuous">
+                                <input type="radio" name="reminderType" value="continuous" checked>
+                                <div class="type-card-content">
+                                    <span class="type-icon">🔄</span>
+                                    <div>
+                                        <strong>Continuous (Daily)</strong>
+                                        <p>Randomized 1-hour window routine (e.g. 3 daily medicine times)</p>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="type-card" id="typeCardOneTime">
+                                <input type="radio" name="reminderType" value="one_time">
+                                <div class="type-card-content">
+                                    <span class="type-icon">🎯</span>
+                                    <div>
+                                        <strong>One-Time Auto Message</strong>
+                                        <p>Specific date & time trigger (e.g. Midnight Birthday wish, appointment)</p>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Fields for CONTINUOUS Mode -->
+                    <div id="continuousFieldsSection" class="mode-fields">
+                        <h3 class="section-divider-title">Daily Slots (Randomized 1-Hour Windows)</h3>
+                        <div id="modalSlotsContainer" class="modal-slots-list">
+                            <!-- 3 Slots: Morning, Afternoon, Night -->
+                        </div>
+                    </div>
+
+                    <!-- Fields for ONE-TIME Mode -->
+                    <div id="oneTimeFieldsSection" class="mode-fields hidden">
+                        <h3 class="section-divider-title">One-Time Schedule Details</h3>
+                        <div class="form-row">
+                            <div class="form-group flex-1">
+                                <label for="inputOneTimeDate">Date *</label>
+                                <input type="date" id="inputOneTimeDate">
+                            </div>
+                            <div class="form-group flex-1">
+                                <label for="inputOneTimeTime">Time (HH:MM 24h) *</label>
+                                <input type="time" id="inputOneTimeTime" value="00:00">
+                                <small class="form-help">Tip: 00:00 for midnight sharp</small>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="inputOneTimeMessage">Message *</label>
+                            <textarea id="inputOneTimeMessage" rows="3" placeholder="Happy Birthday!! 🎂 Wishing you the best day ever!"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" id="btnCancelModal" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" id="btnSaveReminderModal" class="btn btn-primary">Save Reminder</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

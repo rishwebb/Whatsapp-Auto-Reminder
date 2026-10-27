@@ -1,0 +1,549 @@
+/**
+ * Advanced Multi-Target Scheduler Engine for WhatsApp Reminders
+ * 
+ * Supports:
+ * 1. Continuous (Daily) Reminders with randomized 1-hour windows (e.g. 3 daily medicine times).
+ * 2. One-Time Scheduled Auto Messages (e.g. Midnight Birthday wishes, anniversary, appointments).
+ * 3. Multiple separate target phone numbers with full customization per contact.
+ * 4. State persistence to MongoDB Atlas so Render restarts never duplicate or miss reminders.
+ */
+
+const fs = require('fs');
+const path = require('path');
+const cloudSync = require('./cloudSync');
+
+class ReminderScheduler {
+    constructor(options = {}) {
+        this.configFile = options.configFile;
+        this.dailyPlanFile = options.dailyPlanFile;
+        this.historyFile = options.historyFile;
+        this.onTriggerReminder = options.onTriggerReminder || (async () => {});
+        this.onScheduleUpdated = options.onScheduleUpdated || (() => {});
+        this.onConfigChanged = options.onConfigChanged || (() => {});
+
+        this.config = null;
+        this.dailyPlan = null;
+        this.history = [];
+        this.timer = null;
+        this.isProcessing = false;
+    }
+
+    /**
+     * Parse date components in target timezone (e.g. Asia/Kolkata)
+     */
+    getTimeInZone(timezone = 'Asia/Kolkata') {
+        const now = new Date();
+        try {
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: timezone,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+
+            const parts = formatter.formatToParts(now);
+            const getPart = (type) => {
+                const found = parts.find(p => p.type === type);
+                return found ? parseInt(found.value, 10) : 0;
+            };
+
+            const year = getPart('year');
+            const month = String(getPart('month')).padStart(2, '0');
+            const day = String(getPart('day')).padStart(2, '0');
+            const hour = getPart('hour');
+            const minute = getPart('minute');
+            const second = getPart('second');
+
+            const dateStr = `${year}-${month}-${day}`;
+            const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+
+            return {
+                date: dateStr,
+                time: timeStr,
+                year,
+                month,
+                day,
+                hour,
+                minute,
+                second,
+                rawDate: now
+            };
+        } catch (e) {
+            const y = now.getUTCFullYear();
+            const m = String(now.getUTCMonth() + 1).padStart(2, '0');
+            const d = String(now.getUTCDate()).padStart(2, '0');
+            const h = now.getUTCHours();
+            const min = now.getUTCMinutes();
+            const s = now.getUTCSeconds();
+            return {
+                date: `${y}-${m}-${d}`,
+                time: `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}:${String(s).padStart(2, '0')}`,
+                year: y,
+                month: m,
+                day: d,
+                hour: h,
+                minute: min,
+                second: s,
+                rawDate: now
+            };
+        }
+    }
+
+    async init(config) {
+        this.config = config;
+        this.loadHistory();
+        this.loadDailyPlan();
+
+        if (this.timer) clearInterval(this.timer);
+        this.timer = setInterval(() => this.tick(), 10000);
+        console.log(`[SCHEDULER] Engine active in timezone: ${this.config.timezone || 'Asia/Kolkata'} ⏰`);
+
+        setTimeout(() => this.tick(), 2000);
+    }
+
+    updateConfig(newConfig) {
+        this.config = newConfig;
+        this.syncConfigToPlan();
+    }
+
+    loadHistory() {
+        if (fs.existsSync(this.historyFile)) {
+            try {
+                this.history = JSON.parse(fs.readFileSync(this.historyFile, 'utf8'));
+            } catch (_) {
+                this.history = [];
+            }
+        } else {
+            this.history = [];
+        }
+    }
+
+    saveHistory() {
+        try {
+            fs.writeFileSync(this.historyFile, JSON.stringify(this.history.slice(0, 100), null, 2), 'utf8');
+        } catch (e) {
+            console.error('[SCHEDULER] Failed saving history:', e.message);
+        }
+    }
+
+    loadDailyPlan() {
+        const current = this.getTimeInZone(this.config?.timezone || 'Asia/Kolkata');
+        let plan = null;
+
+        if (fs.existsSync(this.dailyPlanFile)) {
+            try {
+                plan = JSON.parse(fs.readFileSync(this.dailyPlanFile, 'utf8'));
+            } catch (_) {
+                plan = null;
+            }
+        }
+
+        if (!plan || plan.date !== current.date) {
+            console.log(`[SCHEDULER] Generating new randomized daily plan for ${current.date}...`);
+            this.dailyPlan = this.generateNewDailyPlan(current.date);
+        } else {
+            this.dailyPlan = plan;
+            this.syncConfigToPlan();
+        }
+    }
+
+    saveDailyPlan() {
+        if (!this.dailyPlan) return;
+        try {
+            fs.writeFileSync(this.dailyPlanFile, JSON.stringify(this.dailyPlan, null, 2), 'utf8');
+            cloudSync.syncDailyPlanToCloud(this.dailyPlan);
+        } catch (e) {
+            console.error('[SCHEDULER] Failed saving daily plan:', e.message);
+        }
+    }
+
+    getRandomTimeInHour(startHour) {
+        // Humanized minutes: between 02 and 57
+        const minute = Math.floor(Math.random() * 56) + 2;
+        const second = Math.floor(Math.random() * 60);
+        return {
+            hour: startHour,
+            minute,
+            second,
+            timeString: `${String(startHour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`
+        };
+    }
+
+    /**
+     * Generate daily timetable combining both continuous random slots and one-time messages
+     */
+    generateNewDailyPlan(dateStr) {
+        const reminders = Array.isArray(this.config?.reminders) ? this.config.reminders : [];
+        const items = [];
+
+        reminders.forEach(rem => {
+            // 1. Continuous (Daily) Reminders
+            if (rem.type === 'continuous' && Array.isArray(rem.slots)) {
+                rem.slots.forEach(slot => {
+                    const r = this.getRandomTimeInHour(slot.startHour);
+                    items.push({
+                        planItemId: `${rem.id}_slot_${slot.id}`,
+                        reminderId: rem.id,
+                        reminderTitle: rem.title || 'Daily Routine',
+                        type: 'continuous',
+                        phone: rem.phone,
+                        contactName: rem.contactName || 'Recipient',
+                        slotId: slot.id,
+                        slotName: slot.name || `Slot ${slot.id}`,
+                        startHour: slot.startHour,
+                        endHour: slot.endHour,
+                        randomMinute: r.minute,
+                        randomSecond: r.second,
+                        targetTime: r.timeString,
+                        message: slot.message || '',
+                        enabled: Boolean(rem.enabled && slot.enabled),
+                        sent: false,
+                        sentAt: null,
+                        status: 'pending'
+                    });
+                });
+            }
+            // 2. One-Time Scheduled Messages
+            else if (rem.type === 'one_time' && rem.oneTime) {
+                // If scheduled for today
+                if (rem.oneTime.date === dateStr) {
+                    const isDelivered = rem.oneTime.status === 'delivered';
+                    const targetTime = rem.oneTime.time ? `${rem.oneTime.time}:00` : '00:00:00';
+                    items.push({
+                        planItemId: `${rem.id}_onetime`,
+                        reminderId: rem.id,
+                        reminderTitle: rem.title || 'One-Time Message',
+                        type: 'one_time',
+                        phone: rem.phone,
+                        contactName: rem.contactName || 'Recipient',
+                        slotId: 0,
+                        slotName: 'Scheduled One-Time Auto Message',
+                        startHour: parseInt(targetTime.split(':')[0], 10),
+                        endHour: parseInt(targetTime.split(':')[0], 10) + 1,
+                        randomMinute: parseInt(targetTime.split(':')[1], 10),
+                        randomSecond: 0,
+                        targetTime: targetTime,
+                        message: rem.oneTime.message || '',
+                        enabled: Boolean(rem.enabled && !isDelivered),
+                        sent: isDelivered,
+                        sentAt: rem.oneTime.deliveredAt || null,
+                        status: isDelivered ? 'delivered' : 'pending'
+                    });
+                }
+            }
+        });
+
+        const newPlan = {
+            date: dateStr,
+            timezone: this.config?.timezone || 'Asia/Kolkata',
+            createdAt: new Date().toISOString(),
+            items
+        };
+
+        try {
+            fs.writeFileSync(this.dailyPlanFile, JSON.stringify(newPlan, null, 2), 'utf8');
+            cloudSync.syncDailyPlanToCloud(newPlan);
+        } catch (_) {}
+
+        return newPlan;
+    }
+
+    /**
+     * Merge updated configuration into today's active plan without wiping already sent statuses
+     */
+    syncConfigToPlan() {
+        if (!this.dailyPlan || !Array.isArray(this.dailyPlan.items)) {
+            const current = this.getTimeInZone(this.config?.timezone || 'Asia/Kolkata');
+            this.dailyPlan = this.generateNewDailyPlan(current.date);
+            return;
+        }
+
+        const currentItems = this.dailyPlan.items;
+        const reminders = Array.isArray(this.config?.reminders) ? this.config.reminders : [];
+        const updatedItems = [];
+        let changed = false;
+
+        reminders.forEach(rem => {
+            if (rem.type === 'continuous' && Array.isArray(rem.slots)) {
+                rem.slots.forEach(slot => {
+                    const planItemId = `${rem.id}_slot_${slot.id}`;
+                    const existing = currentItems.find(i => i.planItemId === planItemId);
+
+                    if (existing) {
+                        existing.reminderTitle = rem.title;
+                        existing.phone = rem.phone;
+                        existing.contactName = rem.contactName;
+                        existing.slotName = slot.name;
+                        existing.message = slot.message;
+                        existing.enabled = Boolean(rem.enabled && slot.enabled);
+
+                        // If hour was changed and not sent, re-roll
+                        if (existing.startHour !== slot.startHour && !existing.sent) {
+                            existing.startHour = slot.startHour;
+                            existing.endHour = slot.endHour;
+                            const r = this.getRandomTimeInHour(slot.startHour);
+                            existing.randomMinute = r.minute;
+                            existing.randomSecond = r.second;
+                            existing.targetTime = r.timeString;
+                            changed = true;
+                        }
+                        updatedItems.push(existing);
+                    } else {
+                        const r = this.getRandomTimeInHour(slot.startHour);
+                        updatedItems.push({
+                            planItemId,
+                            reminderId: rem.id,
+                            reminderTitle: rem.title || 'Daily Routine',
+                            type: 'continuous',
+                            phone: rem.phone,
+                            contactName: rem.contactName || 'Recipient',
+                            slotId: slot.id,
+                            slotName: slot.name || `Slot ${slot.id}`,
+                            startHour: slot.startHour,
+                            endHour: slot.endHour,
+                            randomMinute: r.minute,
+                            randomSecond: r.second,
+                            targetTime: r.timeString,
+                            message: slot.message || '',
+                            enabled: Boolean(rem.enabled && slot.enabled),
+                            sent: false,
+                            sentAt: null,
+                            status: 'pending'
+                        });
+                        changed = true;
+                    }
+                });
+            } else if (rem.type === 'one_time' && rem.oneTime) {
+                if (rem.oneTime.date === this.dailyPlan.date) {
+                    const planItemId = `${rem.id}_onetime`;
+                    const existing = currentItems.find(i => i.planItemId === planItemId);
+                    const isDelivered = rem.oneTime.status === 'delivered';
+                    const targetTime = rem.oneTime.time ? `${rem.oneTime.time}:00` : '00:00:00';
+
+                    if (existing) {
+                        existing.reminderTitle = rem.title;
+                        existing.phone = rem.phone;
+                        existing.contactName = rem.contactName;
+                        existing.message = rem.oneTime.message;
+                        existing.targetTime = targetTime;
+                        existing.enabled = Boolean(rem.enabled && !isDelivered);
+                        existing.sent = isDelivered;
+                        updatedItems.push(existing);
+                    } else {
+                        updatedItems.push({
+                            planItemId,
+                            reminderId: rem.id,
+                            reminderTitle: rem.title || 'One-Time Message',
+                            type: 'one_time',
+                            phone: rem.phone,
+                            contactName: rem.contactName || 'Recipient',
+                            slotId: 0,
+                            slotName: 'Scheduled One-Time Auto Message',
+                            startHour: parseInt(targetTime.split(':')[0], 10),
+                            endHour: parseInt(targetTime.split(':')[0], 10) + 1,
+                            randomMinute: parseInt(targetTime.split(':')[1], 10),
+                            randomSecond: 0,
+                            targetTime: targetTime,
+                            message: rem.oneTime.message || '',
+                            enabled: Boolean(rem.enabled && !isDelivered),
+                            sent: isDelivered,
+                            sentAt: rem.oneTime.deliveredAt || null,
+                            status: isDelivered ? 'delivered' : 'pending'
+                        });
+                        changed = true;
+                    }
+                }
+            }
+        });
+
+        this.dailyPlan.items = updatedItems;
+        this.saveDailyPlan();
+        this.onScheduleUpdated(this.dailyPlan);
+    }
+
+    /**
+     * Heartbeat tick - evaluates all pending continuous and one-time messages
+     */
+    async tick() {
+        if (this.isProcessing) return;
+        this.isProcessing = true;
+
+        try {
+            const current = this.getTimeInZone(this.config?.timezone || 'Asia/Kolkata');
+
+            // 1. Day Rollover check
+            if (!this.dailyPlan || this.dailyPlan.date !== current.date) {
+                console.log(`[SCHEDULER] Day rollover to ${current.date}. Generating fresh plan...`);
+                this.dailyPlan = this.generateNewDailyPlan(current.date);
+                this.onScheduleUpdated(this.dailyPlan);
+                this.isProcessing = false;
+                return;
+            }
+
+            const items = this.dailyPlan.items || [];
+
+            for (const item of items) {
+                if (!item.enabled || item.sent) continue;
+
+                const phone = item.phone?.trim();
+                if (!phone) continue;
+
+                let shouldTrigger = false;
+
+                // Case A: Continuous randomized window
+                if (item.type === 'continuous') {
+                    if (current.hour === item.startHour) {
+                        if (current.minute > item.randomMinute ||
+                           (current.minute === item.randomMinute && current.second >= item.randomSecond)) {
+                            shouldTrigger = true;
+                        }
+                    } else if (this.config?.catchUpIfMissed && current.hour >= item.startHour && current.hour < item.endHour) {
+                        console.log(`[SCHEDULER] Catch-up triggered for continuous slot: ${item.reminderTitle} -> ${item.slotName}`);
+                        shouldTrigger = true;
+                    }
+                }
+                // Case B: One-Time scheduled message (e.g. Birthday at midnight 00:00)
+                else if (item.type === 'one_time') {
+                    const targetParts = (item.targetTime || '00:00:00').split(':');
+                    const targetH = parseInt(targetParts[0], 10);
+                    const targetM = parseInt(targetParts[1], 10);
+
+                    if (current.hour > targetH || (current.hour === targetH && current.minute >= targetM)) {
+                        console.log(`[SCHEDULER] One-Time Scheduled Trigger reached for ${item.reminderTitle} (Target: ${item.targetTime}, Now: ${current.time})`);
+                        shouldTrigger = true;
+                    }
+                }
+
+                if (shouldTrigger) {
+                    await this.dispatchItem(item);
+                }
+            }
+        } catch (err) {
+            console.error('[SCHEDULER TICK ERROR]', err.message);
+        } finally {
+            this.isProcessing = false;
+        }
+    }
+
+    async dispatchItem(item, isManualTest = false) {
+        const messageText = item.message || 'Friendly WhatsApp reminder!';
+
+        try {
+            const result = await this.onTriggerReminder({
+                reminderId: item.reminderId,
+                reminderTitle: item.reminderTitle,
+                slotName: item.slotName,
+                phone: item.phone,
+                contactName: item.contactName,
+                message: messageText,
+                type: item.type,
+                isManualTest
+            });
+
+            if (result && result.success) {
+                const nowIso = new Date().toISOString();
+                const logEntry = {
+                    id: `rem_${Date.now()}_${item.slotId || '0'}`,
+                    date: this.dailyPlan?.date,
+                    reminderId: item.reminderId,
+                    reminderTitle: item.reminderTitle,
+                    type: item.type,
+                    slotName: item.slotName,
+                    phone: item.phone,
+                    contactName: item.contactName,
+                    message: messageText,
+                    timestamp: nowIso,
+                    status: 'delivered',
+                    messageId: result.messageId || null,
+                    isManualTest
+                };
+
+                if (!isManualTest) {
+                    item.sent = true;
+                    item.sentAt = nowIso;
+                    item.status = 'delivered';
+                    this.saveDailyPlan();
+
+                    // If one-time, update parent config so it stays marked delivered
+                    if (item.type === 'one_time' && Array.isArray(this.config?.reminders)) {
+                        const parent = this.config.reminders.find(r => r.id === item.reminderId);
+                        if (parent && parent.oneTime) {
+                            parent.oneTime.status = 'delivered';
+                            parent.oneTime.deliveredAt = nowIso;
+                            this.onConfigChanged(this.config);
+                        }
+                    }
+                }
+
+                this.history.unshift(logEntry);
+                this.saveHistory();
+                cloudSync.logReminderHistoryToCloud(logEntry);
+
+                this.onScheduleUpdated(this.dailyPlan);
+                return { success: true, logEntry };
+            } else {
+                return { success: false, error: result?.error };
+            }
+        } catch (err) {
+            console.error('[DISPATCH ERROR]', err.message);
+            return { success: false, error: err.message };
+        }
+    }
+
+    /**
+     * Trigger test message for a specific reminder
+     */
+    async triggerTest(reminderId, slotId = null) {
+        const reminders = Array.isArray(this.config?.reminders) ? this.config.reminders : [];
+        const rem = reminders.find(r => r.id === reminderId);
+        if (!rem) {
+            throw new Error(`Reminder with ID "${reminderId}" not found.`);
+        }
+
+        const phone = rem.phone?.trim();
+        if (!phone) {
+            throw new Error(`Recipient phone number is empty for "${rem.title}". Please set a phone number first.`);
+        }
+
+        let message = '';
+        let slotName = 'Test Message';
+
+        if (rem.type === 'continuous') {
+            const slot = (rem.slots || []).find(s => s.id === parseInt(slotId, 10)) || rem.slots?.[0];
+            message = slot?.message || 'Daily continuous test reminder 💊';
+            slotName = slot?.name || 'Continuous Slot';
+        } else {
+            message = rem.oneTime?.message || 'One-time test message 🎂';
+            slotName = 'One-Time Message';
+        }
+
+        const dummyItem = {
+            reminderId: rem.id,
+            reminderTitle: rem.title,
+            type: rem.type,
+            slotName,
+            phone: rem.phone,
+            contactName: rem.contactName,
+            message
+        };
+
+        return await this.dispatchItem(dummyItem, true);
+    }
+
+    getState() {
+        const current = this.getTimeInZone(this.config?.timezone || 'Asia/Kolkata');
+        return {
+            currentTime: current.time,
+            currentDate: current.date,
+            timezone: this.config?.timezone || 'Asia/Kolkata',
+            dailyPlan: this.dailyPlan,
+            history: this.history.slice(0, 50)
+        };
+    }
+}
+
+module.exports = ReminderScheduler;

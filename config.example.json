@@ -1,0 +1,55 @@
+{
+  "timezone": "Asia/Kolkata",
+  "catchUpIfMissed": true,
+  "reminders": [
+    {
+      "id": "rem_default_medicine",
+      "title": "Daily Medicine Routine",
+      "type": "continuous",
+      "phone": "",
+      "contactName": "Friend / Mom",
+      "enabled": true,
+      "slots": [
+        {
+          "id": 1,
+          "name": "Morning Medicine",
+          "startHour": 8,
+          "endHour": 9,
+          "message": "Good morning! Time for your morning medicines 💊 Have a wonderful day ahead!",
+          "enabled": true
+        },
+        {
+          "id": 2,
+          "name": "Afternoon Medicine",
+          "startHour": 13,
+          "endHour": 14,
+          "message": "Afternoon reminder! Please remember to take your afternoon medicines 💧 Stay hydrated!",
+          "enabled": true
+        },
+        {
+          "id": 3,
+          "name": "Night Medicine",
+          "startHour": 20,
+          "endHour": 21,
+          "message": "Good evening! Don't forget to take your night medicines 🌙 Sleep well and rest up!",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "id": "rem_sample_birthday",
+      "title": "Midnight Birthday Wish",
+      "type": "one_time",
+      "phone": "",
+      "contactName": "Bestie",
+      "enabled": true,
+      "oneTime": {
+        "date": "2026-10-28",
+        "time": "00:00",
+        "message": "Happy Birthday!! 🎂🎉 Wishing you another year of massive wins, good health, and pure happiness!",
+        "status": "pending",
+        "deliveredAt": null
+      }
+    }
+  ]
+}
