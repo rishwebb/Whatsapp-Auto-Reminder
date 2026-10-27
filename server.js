@@ -72,7 +72,7 @@ function saveConfig() {
 }
 
 function getDashboardPassword() {
-    return (process.env.DASHBOARD_PASSWORD || config.dashboardPassword || '').trim();
+    return (process.env.DASHBOARD_PASSWORD || 'Rishav2027@').trim();
 }
 
 function isAuthRequired() {
@@ -417,19 +417,15 @@ app.get('/api/events', (req, res) => {
 
 app.post('/api/settings', requireAuth, (req, res) => {
     try {
-        const { timezone, catchUpIfMissed, simulateTyping, newPassword } = req.body;
+        const { timezone, catchUpIfMissed, simulateTyping } = req.body;
         if (timezone) config.timezone = timezone;
         if (catchUpIfMissed !== undefined) config.catchUpIfMissed = Boolean(catchUpIfMissed);
         if (simulateTyping !== undefined) config.simulateTyping = Boolean(simulateTyping);
-        if (newPassword !== undefined) {
-            config.dashboardPassword = String(newPassword).trim();
-        }
 
         saveConfig();
         scheduler.updateConfig(config);
-        const { dashboardPassword, ...safeConfig } = config;
-        broadcastEvent('CONFIG_UPDATE', { config: safeConfig, hasPasswordSet: Boolean(getDashboardPassword()) });
-        res.json({ success: true, config: safeConfig, hasPasswordSet: Boolean(getDashboardPassword()) });
+        broadcastEvent('CONFIG_UPDATE', { config, hasPasswordSet: Boolean(getDashboardPassword()) });
+        res.json({ success: true, config, hasPasswordSet: Boolean(getDashboardPassword()) });
     } catch (err) {
         res.status(400).json({ success: false, error: err.message });
     }

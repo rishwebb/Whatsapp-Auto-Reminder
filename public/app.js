@@ -903,18 +903,11 @@ globalSettingsForm.addEventListener('submit', async (e) => {
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
 
-    const inputDashboardPassword = document.getElementById('inputDashboardPassword');
-    const newPasswordVal = inputDashboardPassword ? inputDashboardPassword.value.trim() : '';
-
     const payload = {
         timezone: selTimezone.value,
         catchUpIfMissed: chkCatchUp.checked,
         simulateTyping: chkTyping.checked
     };
-
-    if (newPasswordVal) {
-        payload.newPassword = newPasswordVal;
-    }
 
     try {
         const res = await authFetch('/api/settings', {
@@ -924,15 +917,8 @@ globalSettingsForm.addEventListener('submit', async (e) => {
         });
         const data = await res.json();
         if (data.success) {
-            if (newPasswordVal) {
-                showToast('Settings & Dashboard Password updated! 🔒', 'success');
-                inputDashboardPassword.value = '';
-                btnLockDashboard?.classList.remove('hidden');
-            } else {
-                showToast('System settings updated! ⚙️', 'success');
-            }
+            showToast('System settings updated! ⚙️', 'success');
             appState.config = data.config;
-            if (data.hasPasswordSet !== undefined) appState.hasPasswordSet = data.hasPasswordSet;
             startClock();
         } else {
             showToast(data.error || 'Failed saving settings', 'error');
