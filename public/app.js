@@ -8,6 +8,7 @@ let appState = {
     config: {
         timezone: 'Asia/Kolkata',
         catchUpIfMissed: true,
+        simulateTyping: true,
         reminders: []
     },
     scheduler: {
@@ -40,6 +41,7 @@ const btnUnpair = document.getElementById('btnUnpair');
 
 const selTimezone = document.getElementById('selTimezone');
 const chkCatchUp = document.getElementById('chkCatchUp');
+const chkTyping = document.getElementById('chkTyping');
 const globalSettingsForm = document.getElementById('globalSettingsForm');
 
 const planDateBadge = document.getElementById('planDateBadge');
@@ -70,10 +72,12 @@ const typeCardOneTime = document.getElementById('typeCardOneTime');
 const continuousFieldsSection = document.getElementById('continuousFieldsSection');
 const oneTimeFieldsSection = document.getElementById('oneTimeFieldsSection');
 const modalSlotsContainer = document.getElementById('modalSlotsContainer');
+const btnAddSlot = document.getElementById('btnAddSlot');
 
 const inputOneTimeDate = document.getElementById('inputOneTimeDate');
 const inputOneTimeTime = document.getElementById('inputOneTimeTime');
-const inputOneTimeMessage = document.getElementById('inputOneTimeMessage');
+const modalOneTimeMessagesContainer = document.getElementById('modalOneTimeMessagesContainer');
+const btnAddOneTimeVariation = document.getElementById('btnAddOneTimeVariation');
 
 const btnOpenNewModal = document.getElementById('btnOpenNewModal');
 const btnCloseModal = document.getElementById('btnCloseModal');
@@ -167,7 +171,6 @@ function renderDeviceState() {
         btnUnpair.classList.add('hidden');
     }
 
-    // Cloud status pill
     cloudDot.className = 'indicator-dot';
     if (appState.cloud?.connected) {
         cloudDot.classList.add('dot-green');
@@ -185,13 +188,7 @@ function renderSystemSettings() {
     if (!appState.config) return;
     selTimezone.value = appState.config.timezone || 'Asia/Kolkata';
     chkCatchUp.checked = appState.config.catchUpIfMissed !== undefined ? Boolean(appState.config.catchUpIfMissed) : true;
-}
-
-function formatHourLabel(h) {
-    const num = parseInt(h, 10);
-    const suffix = num >= 12 ? 'PM' : 'AM';
-    const hour12 = num % 12 === 0 ? 12 : num % 12;
-    return `${hour12}:00 ${suffix}`;
+    chkTyping.checked = appState.config.simulateTyping !== undefined ? Boolean(appState.config.simulateTyping) : true;
 }
 
 function formatTime12h(timeStr) {
@@ -200,10 +197,26 @@ function formatTime12h(timeStr) {
     if (parts.length < 2) return timeStr;
     const h = parseInt(parts[0], 10);
     const m = parts[1];
-    const s = parts[2] || '00';
+    const s = parts[2] ? `:${parts[2]}` : '';
     const suffix = h >= 12 ? 'PM' : 'AM';
     const hour12 = h % 12 === 0 ? 12 : h % 12;
-    return `${hour12}:${m}:${s} ${suffix}`;
+    return `${hour12}:${m}${s} ${suffix}`;
+}
+
+function calculateWindowSpanText(startStr, endStr) {
+    const sParts = (startStr || '08:00').split(':').map(Number);
+    const eParts = (endStr || '09:00').split(':').map(Number);
+    let sMin = sParts[0] * 60 + (sParts[1] || 0);
+    let eMin = eParts[0] * 60 + (eParts[1] || 0);
+    if (eMin <= sMin) eMin += 1440;
+    const diff = eMin - sMin;
+    if (diff >= 60 && diff % 60 === 0) {
+        return `${diff / 60}h window`;
+    }
+    if (diff >= 60) {
+        return `${Math.floor(diff / 60)}h ${diff % 60}m window`;
+    }
+    return `${diff}m window`;
 }
 
 // -------------------------------------------------------------
@@ -212,7 +225,6 @@ function formatTime12h(timeStr) {
 function renderRemindersList() {
     const reminders = appState.config?.reminders || [];
 
-    // Update Counters
     const contCount = reminders.filter(r => r.type === 'continuous').length;
     const otCount = reminders.filter(r => r.type === 'one_time').length;
     countAll.textContent = reminders.length;
@@ -243,15 +255,17 @@ function renderRemindersList() {
         card.className = `reminder-item-card ${!rem.enabled ? 'paused' : ''}`;
         card.dataset.id = rem.id;
 
-        // Content preview
         let bodyHtml = '';
         if (isContinuous) {
             const slots = rem.slots || [];
             let pillsHtml = '';
             slots.forEach(s => {
+                const span = calculateWindowSpanText(s.startTime, s.endTime);
+                const varCount = Array.isArray(s.messages) ? s.messages.length : (s.message ? 1 : 0);
                 pillsHtml += `
                     <div class="slot-summary-pill">
-                        <strong>${s.name}:</strong> ${formatHourLabel(s.startHour)} - ${formatHourLabel(s.endHour)}
+                        <strong>${s.name}:</strong> ${formatTime12h(s.startTime)} - ${formatTime12h(s.endTime)} (${span})
+                        <span class="variations-badge">${varCount} var 🎲</span>
                     </div>
                 `;
             });
@@ -263,16 +277,18 @@ function renderRemindersList() {
         } else {
             const ot = rem.oneTime || {};
             const isDelivered = ot.status === 'delivered';
+            const varCount = Array.isArray(ot.messages) ? ot.messages.length : 1;
             bodyHtml = `
                 <div class="one-time-summary">
                     <div class="flex items-center gap-3">
-                        <span class="one-time-time-tag">📅 ${ot.date || 'Today'} at ${ot.time || '00:00'}</span>
+                        <span class="one-time-time-tag">📅 ${ot.date || 'Today'} at ${formatTime12h(ot.time || '00:00')}</span>
+                        <span class="variations-badge">${varCount} variation(s) 🎲</span>
                         <span class="slot-status-badge ${isDelivered ? 'status-badge-delivered' : 'status-badge-pending'}">
                             ${isDelivered ? '✓ Delivered' : '⏳ Scheduled'}
                         </span>
                     </div>
                     <div class="reminder-content-box mt-2">
-                        "${ot.message || 'No message'}"
+                        "${(ot.messages && ot.messages[0]) || ot.message || 'No message'}"
                     </div>
                 </div>
             `;
@@ -322,7 +338,6 @@ function renderRemindersList() {
         remindersContainer.appendChild(card);
     });
 
-    // Attach Action Listeners
     document.querySelectorAll('.btn-test-reminder').forEach(b => {
         b.addEventListener('click', () => handleTestReminder(b.dataset.id));
     });
@@ -364,9 +379,12 @@ function renderScheduleTimeline() {
         }
 
         const isContinuous = item.type === 'continuous';
+        const spanText = isContinuous ? calculateWindowSpanText(item.startTime, item.endTime) : '';
         const subLabel = isContinuous
-            ? `Daily Window: ${formatHourLabel(item.startHour)} - ${formatHourLabel(item.endHour)}`
+            ? `Window: ${formatTime12h(item.startTime)} - ${formatTime12h(item.endTime)} (${spanText})`
             : `One-Time Message`;
+
+        const varCount = Array.isArray(item.messages) ? item.messages.length : 1;
 
         card.innerHTML = `
             <div class="slot-card-left">
@@ -375,6 +393,7 @@ function renderScheduleTimeline() {
                         ${isContinuous ? 'Daily' : 'One-Time'}
                     </span>
                     <span class="slot-card-title">${item.reminderTitle} (${item.slotName})</span>
+                    <span class="variations-badge">${varCount} var 🎲</span>
                 </div>
                 <span class="slot-card-sub">To: +${item.phone} (${item.contactName}) • ${subLabel}</span>
             </div>
@@ -425,7 +444,8 @@ function renderHistory() {
                 <div style="font-size: 0.72rem; color: var(--text-muted);">${item.contactName || ''}</div>
             </td>
             <td style="max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.message}">
-                ${item.message}
+                <div>${item.message}</div>
+                ${item.variationInfo ? `<span style="font-size: 0.68rem; color: var(--accent-purple);">${item.variationInfo}</span>` : ''}
             </td>
             <td>
                 <span style="color: #34d399; font-weight: 700; font-size: 0.76rem;">✓ Delivered</span>
@@ -436,41 +456,162 @@ function renderHistory() {
 }
 
 // -------------------------------------------------------------
-// Modal Dialog Controller
+// Modal Dialog & Dynamic Slot/Variations Management
 // -------------------------------------------------------------
-function getModalSlotsTemplate(existingSlots = null) {
-    const defaults = [
-        { id: 1, name: 'Morning Medicine', startHour: 8, endHour: 9, message: 'Good morning! Time for your morning medicines 💊 Have a great day!', enabled: true },
-        { id: 2, name: 'Afternoon Medicine', startHour: 13, endHour: 14, message: 'Afternoon reminder! Please remember to take your afternoon medicines 💧 Stay hydrated!', enabled: true },
-        { id: 3, name: 'Night Medicine', startHour: 20, endHour: 21, message: 'Good evening! Don\'t forget to take your night medicines 🌙 Sleep well!', enabled: true }
-    ];
+let modalSlotCounter = 0;
 
-    const slots = Array.isArray(existingSlots) && existingSlots.length > 0 ? existingSlots : defaults;
-    let html = '';
+function createSlotCardElement(slotData = null) {
+    modalSlotCounter++;
+    const slotId = slotData?.id || modalSlotCounter;
+    const slotName = slotData?.name || `Slot ${slotId}`;
+    const startTime = slotData?.startTime || '08:00';
+    const endTime = slotData?.endTime || '09:00';
+    const enabled = slotData?.enabled !== undefined ? Boolean(slotData.enabled) : true;
 
-    slots.forEach(slot => {
-        let optionsHtml = '';
-        for (let i = 0; i < 24; i++) {
-            const selected = i === slot.startHour ? 'selected' : '';
-            optionsHtml += `<option value="${i}" ${selected}>${formatHourLabel(i)} - ${formatHourLabel(i + 1)}</option>`;
-        }
+    const messages = Array.isArray(slotData?.messages) && slotData.messages.length > 0
+        ? slotData.messages
+        : (slotData?.message ? [slotData.message] : ['Friendly reminder 💊']);
 
-        html += `
-            <div class="modal-slot-card" data-slot-id="${slot.id}">
-                <div class="modal-slot-row">
-                    <input type="checkbox" class="modal-slot-en" id="ms_en_${slot.id}" ${slot.enabled ? 'checked' : ''}>
-                    <span class="modal-slot-title">${slot.name}</span>
-                    <select class="modal-slot-hour ml-auto" style="width: auto; min-width: 140px;">
-                        ${optionsHtml}
-                    </select>
-                </div>
-                <textarea class="modal-slot-msg" rows="2" placeholder="Reminder message...">${slot.message || ''}</textarea>
+    const card = document.createElement('div');
+    card.className = 'modal-slot-card';
+    card.dataset.slotId = slotId;
+
+    let variationsHtml = '';
+    messages.forEach((msg, idx) => {
+        variationsHtml += `
+            <div class="variation-row">
+                <textarea class="slot-variation-msg" rows="2" placeholder="Reminder message variation...">${msg}</textarea>
+                <button type="button" class="btn-remove-variation" title="Delete variation" ${messages.length === 1 ? 'style="display:none;"' : ''}>✕</button>
             </div>
         `;
     });
 
-    return html;
+    const spanText = calculateWindowSpanText(startTime, endTime);
+
+    card.innerHTML = `
+        <div class="modal-slot-header">
+            <div class="flex items-center gap-2">
+                <input type="checkbox" class="modal-slot-en" id="slot_chk_${slotId}" ${enabled ? 'checked' : ''}>
+                <input type="text" class="modal-slot-name" value="${slotName}" placeholder="Slot Name (e.g. Morning Medicine)" style="width: 200px; font-weight: 700;">
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger btn-delete-slot">
+                🗑️ Remove Slot
+            </button>
+        </div>
+
+        <div class="window-inputs-row">
+            <span class="text-xs text-muted" style="font-weight: 700;">WINDOW:</span>
+            <input type="time" class="modal-slot-start" value="${startTime}">
+            <span class="text-xs text-muted">to</span>
+            <input type="time" class="modal-slot-end" value="${endTime}">
+            <span class="window-span-badge">${spanText}</span>
+        </div>
+
+        <div>
+            <div class="flex items-center justify-between mb-1">
+                <label class="mb-0 text-xs">Text Variations (Picks 1 at random each day) 🎲</label>
+                <button type="button" class="btn btn-sm btn-outline btn-add-variation py-1">
+                    + Add Variation
+                </button>
+            </div>
+            <div class="message-variations-container slot-variations-list">
+                ${variationsHtml}
+            </div>
+            <small class="form-help">Tip: Use {name}, {time}, {date} placeholders.</small>
+        </div>
+    `;
+
+    // Hook listeners inside slot card
+    const startInput = card.querySelector('.modal-slot-start');
+    const endInput = card.querySelector('.modal-slot-end');
+    const spanBadge = card.querySelector('.window-span-badge');
+
+    const updateSpan = () => {
+        spanBadge.textContent = calculateWindowSpanText(startInput.value, endInput.value);
+    };
+    startInput.addEventListener('change', updateSpan);
+    endInput.addEventListener('change', updateSpan);
+
+    // Add variation listener
+    const variationsList = card.querySelector('.slot-variations-list');
+    const btnAddVar = card.querySelector('.btn-add-variation');
+
+    btnAddVar.addEventListener('click', () => {
+        const row = document.createElement('div');
+        row.className = 'variation-row';
+        row.innerHTML = `
+            <textarea class="slot-variation-msg" rows="2" placeholder="Another text variation..."></textarea>
+            <button type="button" class="btn-remove-variation" title="Delete variation">✕</button>
+        `;
+        row.querySelector('.btn-remove-variation').addEventListener('click', () => {
+            row.remove();
+            updateRemoveButtonsVisibility(variationsList);
+        });
+        variationsList.appendChild(row);
+        updateRemoveButtonsVisibility(variationsList);
+    });
+
+    // Remove variation listeners
+    variationsList.querySelectorAll('.btn-remove-variation').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.target.closest('.variation-row').remove();
+            updateRemoveButtonsVisibility(variationsList);
+        });
+    });
+
+    // Delete slot listener
+    card.querySelector('.btn-delete-slot').addEventListener('click', () => {
+        card.remove();
+    });
+
+    return card;
 }
+
+function updateRemoveButtonsVisibility(container) {
+    const rows = container.querySelectorAll('.variation-row');
+    rows.forEach(r => {
+        const btn = r.querySelector('.btn-remove-variation');
+        if (btn) btn.style.display = rows.length > 1 ? 'block' : 'none';
+    });
+}
+
+function renderOneTimeMessagesUI(messages = null) {
+    const list = Array.isArray(messages) && messages.length > 0 ? messages : ['Happy Birthday!! 🎂🎉'];
+    modalOneTimeMessagesContainer.innerHTML = '';
+
+    list.forEach(msg => {
+        const row = document.createElement('div');
+        row.className = 'variation-row';
+        row.innerHTML = `
+            <textarea class="ot-variation-msg" rows="2" placeholder="One-time message variation...">${msg}</textarea>
+            <button type="button" class="btn-remove-variation" title="Delete variation" ${list.length === 1 ? 'style="display:none;"' : ''}>✕</button>
+        `;
+        row.querySelector('.btn-remove-variation').addEventListener('click', () => {
+            row.remove();
+            updateRemoveButtonsVisibility(modalOneTimeMessagesContainer);
+        });
+        modalOneTimeMessagesContainer.appendChild(row);
+    });
+}
+
+btnAddOneTimeVariation.addEventListener('click', () => {
+    const row = document.createElement('div');
+    row.className = 'variation-row';
+    row.innerHTML = `
+        <textarea class="ot-variation-msg" rows="2" placeholder="Another message version..."></textarea>
+        <button type="button" class="btn-remove-variation" title="Delete variation">✕</button>
+    `;
+    row.querySelector('.btn-remove-variation').addEventListener('click', () => {
+        row.remove();
+        updateRemoveButtonsVisibility(modalOneTimeMessagesContainer);
+    });
+    modalOneTimeMessagesContainer.appendChild(row);
+    updateRemoveButtonsVisibility(modalOneTimeMessagesContainer);
+});
+
+btnAddSlot.addEventListener('click', () => {
+    modalSlotsContainer.appendChild(createSlotCardElement());
+});
 
 function updateModalTypeUI(type) {
     if (type === 'continuous') {
@@ -497,13 +638,22 @@ function openCreateModal() {
     document.querySelector('input[name="reminderType"][value="continuous"]').checked = true;
     updateModalTypeUI('continuous');
 
-    modalSlotsContainer.innerHTML = getModalSlotsTemplate();
+    modalSlotsContainer.innerHTML = '';
+    modalSlotCounter = 0;
 
-    // Default One-Time date to today or tomorrow
+    // Default 3 dynamic slots
+    const defaults = [
+        { id: 1, name: 'Morning Medicine', startTime: '08:00', endTime: '09:00', messages: ['Good morning! Time for your morning medicines 💊 Have a great day!', 'Morning! Quick reminder to take your meds and drink water 💧'] },
+        { id: 2, name: 'Afternoon Medicine', startTime: '13:00', endTime: '14:00', messages: ['Afternoon reminder! Please remember your afternoon medicines 💧 Stay hydrated!', 'Hey! Don\'t forget your afternoon pills 💊'] },
+        { id: 3, name: 'Night Medicine', startTime: '20:00', endTime: '21:00', messages: ['Good evening! Don\'t forget your night medicines before bed 🌙 Sleep well!', 'Night reminder! Time for your evening meds 💊 Sweet dreams!'] }
+    ];
+
+    defaults.forEach(d => modalSlotsContainer.appendChild(createSlotCardElement(d)));
+
     const today = new Date().toISOString().split('T')[0];
     inputOneTimeDate.value = today;
     inputOneTimeTime.value = '00:00';
-    inputOneTimeMessage.value = 'Happy Birthday!! 🎂🎉 Wishing you the most amazing year ahead!';
+    renderOneTimeMessagesUI(['Happy Birthday!! 🎂🎉 Wishing you the most wonderful year ahead!']);
 
     reminderModal.classList.remove('hidden');
 }
@@ -523,13 +673,17 @@ function openEditModal(reminderId) {
     if (typeRadio) typeRadio.checked = true;
     updateModalTypeUI(rem.type);
 
+    modalSlotsContainer.innerHTML = '';
+    modalSlotCounter = 0;
+
     if (rem.type === 'continuous') {
-        modalSlotsContainer.innerHTML = getModalSlotsTemplate(rem.slots);
+        const slots = Array.isArray(rem.slots) && rem.slots.length > 0 ? rem.slots : [];
+        slots.forEach(s => modalSlotsContainer.appendChild(createSlotCardElement(s)));
     } else {
         const ot = rem.oneTime || {};
         inputOneTimeDate.value = ot.date || new Date().toISOString().split('T')[0];
         inputOneTimeTime.value = ot.time || '00:00';
-        inputOneTimeMessage.value = ot.message || '';
+        renderOneTimeMessagesUI(ot.messages || (ot.message ? [ot.message] : null));
     }
 
     reminderModal.classList.remove('hidden');
@@ -539,19 +693,17 @@ function closeModal() {
     reminderModal.classList.add('hidden');
 }
 
-// Type selection toggle
 document.querySelectorAll('input[name="reminderType"]').forEach(radio => {
     radio.addEventListener('change', (e) => {
         updateModalTypeUI(e.target.value);
     });
 });
 
-// Modal Buttons
 btnOpenNewModal.addEventListener('click', openCreateModal);
 btnCloseModal.addEventListener('click', closeModal);
 btnCancelModal.addEventListener('click', closeModal);
 
-// Modal Form Submit (Create or Update)
+// Modal Form Submit
 reminderForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const saveBtn = document.getElementById('btnSaveReminderModal');
@@ -572,26 +724,32 @@ reminderForm.addEventListener('submit', async (e) => {
     if (type === 'continuous') {
         const slotCards = modalSlotsContainer.querySelectorAll('.modal-slot-card');
         payload.slots = Array.from(slotCards).map((card, idx) => {
-            const slotId = parseInt(card.dataset.slotId, 10);
+            const slotId = parseInt(card.dataset.slotId, 10) || (idx + 1);
             const enabled = card.querySelector('.modal-slot-en').checked;
-            const startHour = parseInt(card.querySelector('.modal-slot-hour').value, 10);
-            const message = card.querySelector('.modal-slot-msg').value.trim();
-            const names = ['Morning Medicine', 'Afternoon Medicine', 'Night Medicine'];
+            const name = card.querySelector('.modal-slot-name').value.trim() || `Slot ${idx + 1}`;
+            const startTime = card.querySelector('.modal-slot-start').value || '08:00';
+            const endTime = card.querySelector('.modal-slot-end').value || '09:00';
+
+            const varInputs = card.querySelectorAll('.slot-variation-msg');
+            const messages = Array.from(varInputs).map(i => i.value.trim()).filter(Boolean);
 
             return {
                 id: slotId,
-                name: names[idx] || `Slot ${slotId}`,
-                startHour,
-                endHour: (startHour + 1) % 24,
-                message,
+                name,
+                startTime,
+                endTime,
+                messages: messages.length > 0 ? messages : ['Friendly reminder 💊'],
                 enabled
             };
         });
     } else {
+        const otInputs = modalOneTimeMessagesContainer.querySelectorAll('.ot-variation-msg');
+        const messages = Array.from(otInputs).map(i => i.value.trim()).filter(Boolean);
+
         payload.oneTime = {
             date: inputOneTimeDate.value,
             time: inputOneTimeTime.value,
-            message: inputOneTimeMessage.value.trim()
+            messages: messages.length > 0 ? messages : ['Happy Birthday! 🎂']
         };
     }
 
@@ -607,7 +765,7 @@ reminderForm.addEventListener('submit', async (e) => {
         const data = await res.json();
 
         if (data.success) {
-            showToast(`Reminder "${payload.title}" saved successfully! 🎉`, 'success');
+            showToast(`Reminder "${payload.title}" saved! 🎉`, 'success');
             appState.config = data.config;
             renderRemindersList();
             closeModal();
@@ -647,7 +805,7 @@ async function handleDeleteReminder(reminderId) {
 
 // Test Reminder Handler
 async function handleTestReminder(reminderId) {
-    showToast('Sending test message to WhatsApp... ⏳', 'info');
+    showToast('Simulating typing & sending test to WhatsApp... ⏳', 'info');
     try {
         const res = await fetch(`/api/reminders/${reminderId}/test`, { method: 'POST' });
         const data = await res.json();
@@ -685,7 +843,8 @@ globalSettingsForm.addEventListener('submit', async (e) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 timezone: selTimezone.value,
-                catchUpIfMissed: chkCatchUp.checked
+                catchUpIfMissed: chkCatchUp.checked,
+                simulateTyping: chkTyping.checked
             })
         });
         const data = await res.json();
@@ -704,7 +863,7 @@ globalSettingsForm.addEventListener('submit', async (e) => {
     }
 });
 
-// Re-roll Today's Random Times
+// Re-roll Plan
 btnRerollPlan.addEventListener('click', async () => {
     btnRerollPlan.disabled = true;
     try {
@@ -748,9 +907,7 @@ btnUnpair.addEventListener('click', async () => {
     }
 });
 
-// -------------------------------------------------------------
-// SSE & Data Fetching
-// -------------------------------------------------------------
+// SSE Stream
 function connectSSE() {
     if (eventSource) eventSource.close();
     eventSource = new EventSource('/api/events');

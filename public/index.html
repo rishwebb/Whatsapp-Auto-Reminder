@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PillPulse — WhatsApp Multi-Target Reminder & Auto-Message</title>
+    <title>PillPulse — Autonomous WhatsApp Multi-Target Reminder</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -23,8 +23,8 @@
                     <div class="pulse-ring"></div>
                 </div>
                 <div>
-                    <h1 class="brand-title">PillPulse <span class="badge-sub">Multi-Target WA</span></h1>
-                    <p class="brand-subtitle">Continuous Daily Routines & Scheduled One-Time Auto Messages</p>
+                    <h1 class="brand-title">PillPulse <span class="badge-sub">Autonomous WA</span></h1>
+                    <p class="brand-subtitle">Dynamic Windows • Random Text Variations • Multi-Contact Routines</p>
                 </div>
             </div>
 
@@ -51,12 +51,12 @@
             </div>
         </header>
 
-        <!-- Notification Toast -->
+        <!-- Notification Toast Container -->
         <div id="toastContainer" class="toast-container"></div>
 
-        <!-- Dashboard Grid Layout -->
+        <!-- Main Dashboard Grid -->
         <main class="dashboard-grid">
-            <!-- Left Column: WhatsApp Device & Global Settings & History -->
+            <!-- Left Column: WhatsApp Device, Settings, Delivery Logs -->
             <section class="grid-col left-col">
                 <!-- WhatsApp Device Card -->
                 <div class="glass-card" id="deviceCard">
@@ -98,7 +98,7 @@
                                 <span class="shield-icon">🛡️</span>
                                 <div>
                                     <strong>Permanent Stealth Shield Active</strong>
-                                    <p>Offline status enforced so you never show as "Online 24/7".</p>
+                                    <p>Offline presence enforced so you never show as "Online 24/7".</p>
                                 </div>
                             </div>
                         </div>
@@ -126,6 +126,13 @@
                                     <option value="America/Los_Angeles">Los Angeles (PST/PDT)</option>
                                     <option value="UTC">Universal UTC</option>
                                 </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="chkTyping" checked>
+                                    <span>Simulate Natural Typing Indicator (composing...) 💬</span>
+                                </label>
                             </div>
 
                             <div class="form-group">
@@ -159,7 +166,7 @@
                                     <tr>
                                         <th>Time</th>
                                         <th>Recipient</th>
-                                        <th>Message</th>
+                                        <th>Message Delivered</th>
                                         <th>Status</th>
                                     </tr>
                                 </thead>
@@ -186,8 +193,8 @@
                                 <span class="card-meta" id="planDateBadge">Loading timetable...</span>
                             </div>
                         </div>
-                        <button id="btnRerollPlan" class="btn btn-sm btn-outline" title="Re-randomize minutes for today">
-                            <span>🎲 Re-roll Times</span>
+                        <button id="btnRerollPlan" class="btn btn-sm btn-outline" title="Re-randomize minutes for remaining slots today">
+                            <span>🎲 Re-roll Today's Times</span>
                         </button>
                     </div>
 
@@ -236,8 +243,8 @@
                 <div class="modal-body">
                     <div class="form-row">
                         <div class="form-group flex-2">
-                            <label for="inputTitle">Reminder Title / Label *</label>
-                            <input type="text" id="inputTitle" placeholder="e.g. Mom's Medicine Routine, Rahul's Birthday" required>
+                            <label for="inputTitle">Reminder Title / Purpose *</label>
+                            <input type="text" id="inputTitle" placeholder="e.g. Mom's Daily Medicines, Birthday Wish" required>
                         </div>
                         <div class="form-group flex-1">
                             <label for="inputEnabled">Status</label>
@@ -261,7 +268,7 @@
                         </div>
                     </div>
 
-                    <!-- Type Selector: Continuous vs One-Time -->
+                    <!-- Mode Selector: Continuous vs One-Time -->
                     <div class="form-group">
                         <label>Reminder Mode *</label>
                         <div class="type-selector-group">
@@ -270,8 +277,8 @@
                                 <div class="type-card-content">
                                     <span class="type-icon">🔄</span>
                                     <div>
-                                        <strong>Continuous (Daily)</strong>
-                                        <p>Randomized 1-hour window routine (e.g. 3 daily medicine times)</p>
+                                        <strong>Continuous (Daily Routine)</strong>
+                                        <p>Customizable slots & time windows with random text variations</p>
                                     </div>
                                 </div>
                             </label>
@@ -282,7 +289,7 @@
                                     <span class="type-icon">🎯</span>
                                     <div>
                                         <strong>One-Time Auto Message</strong>
-                                        <p>Specific date & time trigger (e.g. Midnight Birthday wish, appointment)</p>
+                                        <p>Exact date & time trigger (e.g. Midnight birthday wish at 00:00)</p>
                                     </div>
                                 </div>
                             </label>
@@ -291,9 +298,18 @@
 
                     <!-- Fields for CONTINUOUS Mode -->
                     <div id="continuousFieldsSection" class="mode-fields">
-                        <h3 class="section-divider-title">Daily Slots (Randomized 1-Hour Windows)</h3>
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="section-divider-title mb-0">Daily Time Windows & Variations</h3>
+                            <button type="button" id="btnAddSlot" class="btn btn-sm btn-outline">
+                                + Add Another Slot
+                            </button>
+                        </div>
+                        <p class="text-xs text-muted mb-3">
+                            Set any custom window duration (e.g. 10m, 30m, 1h, 2h). Add multiple text versions per slot to avoid repetitive bot-like messages!
+                        </p>
+
                         <div id="modalSlotsContainer" class="modal-slots-list">
-                            <!-- 3 Slots: Morning, Afternoon, Night -->
+                            <!-- Dynamic Slots injected by JS -->
                         </div>
                     </div>
 
@@ -313,8 +329,15 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="inputOneTimeMessage">Message *</label>
-                            <textarea id="inputOneTimeMessage" rows="3" placeholder="Happy Birthday!! 🎂 Wishing you the best day ever!"></textarea>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="mb-0">Message Variations (Picks one at random)</label>
+                                <button type="button" id="btnAddOneTimeVariation" class="btn btn-sm btn-outline py-1">
+                                    + Add Variation
+                                </button>
+                            </div>
+                            <div id="modalOneTimeMessagesContainer" class="message-variations-container">
+                                <!-- Message inputs -->
+                            </div>
                         </div>
                     </div>
                 </div>

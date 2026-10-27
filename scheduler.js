@@ -1,11 +1,13 @@
 /**
  * Advanced Multi-Target Scheduler Engine for WhatsApp Reminders
  * 
- * Supports:
- * 1. Continuous (Daily) Reminders with randomized 1-hour windows (e.g. 3 daily medicine times).
- * 2. One-Time Scheduled Auto Messages (e.g. Midnight Birthday wishes, anniversary, appointments).
- * 3. Multiple separate target phone numbers with full customization per contact.
- * 4. State persistence to MongoDB Atlas so Render restarts never duplicate or miss reminders.
+ * Features:
+ * 1. Arbitrary number of slots per continuous reminder (Add/Remove as many as you want!).
+ * 2. Custom window durations: from 2 minutes, 10 minutes, 1 hour, to 3 hours (startTime HH:MM to endTime HH:MM).
+ * 3. Message variations / Random text pool: define multiple text versions per slot, picks one randomly each time!
+ * 4. Anti-bot humanization: dynamic template placeholders ({name}, {time}, {date}) and typing simulation.
+ * 5. One-Time scheduled messages with exact date & time (e.g. Midnight birthday surprise).
+ * 6. Bulletproof state persistence to MongoDB Atlas so Render restarts never duplicate or miss reminders.
  */
 
 const fs = require('fs');
@@ -60,6 +62,7 @@ class ReminderScheduler {
 
             const dateStr = `${year}-${month}-${day}`;
             const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+            const totalSeconds = hour * 3600 + minute * 60 + second;
 
             return {
                 date: dateStr,
@@ -70,6 +73,7 @@ class ReminderScheduler {
                 hour,
                 minute,
                 second,
+                totalSeconds,
                 rawDate: now
             };
         } catch (e) {
@@ -88,6 +92,7 @@ class ReminderScheduler {
                 hour: h,
                 minute: min,
                 second: s,
+                totalSeconds: h * 3600 + min * 60 + s,
                 rawDate: now
             };
         }
@@ -100,7 +105,7 @@ class ReminderScheduler {
 
         if (this.timer) clearInterval(this.timer);
         this.timer = setInterval(() => this.tick(), 10000);
-        console.log(`[SCHEDULER] Engine active in timezone: ${this.config.timezone || 'Asia/Kolkata'} ⏰`);
+        console.log(`[SCHEDULER] Multi-target engine active in timezone: ${this.config.timezone || 'Asia/Kolkata'} ⏰`);
 
         setTimeout(() => this.tick(), 2000);
     }
@@ -161,15 +166,97 @@ class ReminderScheduler {
         }
     }
 
-    getRandomTimeInHour(startHour) {
-        // Humanized minutes: between 02 and 57
-        const minute = Math.floor(Math.random() * 56) + 2;
-        const second = Math.floor(Math.random() * 60);
+    /**
+     * Converts a time string (HH:MM or HH:MM:SS) to total seconds from midnight
+     */
+    timeToSeconds(timeStr) {
+        if (!timeStr) return 0;
+        const parts = String(timeStr).split(':').map(p => parseInt(p, 10) || 0);
+        const h = parts[0] || 0;
+        const m = parts[1] || 0;
+        const s = parts[2] || 0;
+        return h * 3600 + m * 60 + s;
+    }
+
+    /**
+     * Converts total seconds from midnight to HH:MM:SS format
+     */
+    secondsToTime(totalSec) {
+        const secNorm = ((totalSec % 86400) + 86400) % 86400;
+        const h = Math.floor(secNorm / 3600);
+        const m = Math.floor((secNorm % 3600) / 60);
+        const s = secNorm % 60;
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    /**
+     * Generate a random target time within ANY custom time window (2 min, 10 min, 1 hr, 3 hr)
+     */
+    getRandomTimeInWindow(startTimeStr, endTimeStr) {
+        const startSec = this.timeToSeconds(startTimeStr);
+        let endSec = this.timeToSeconds(endTimeStr);
+
+        // If endTime is before or equal to startTime, assume end of hour or +1 hour
+        if (endSec <= startSec) {
+            endSec = startSec + 3600;
+        }
+
+        const windowSeconds = endSec - startSec;
+
+        let targetSec;
+        if (windowSeconds <= 30) {
+            targetSec = startSec;
+        } else if (windowSeconds <= 120) {
+            // Short window (e.g. 1-2 minutes)
+            targetSec = startSec + Math.floor(Math.random() * windowSeconds);
+        } else {
+            // Buffer 10 seconds from each edge for natural feel
+            const buffer = Math.min(60, Math.floor(windowSeconds * 0.05));
+            const availableRange = windowSeconds - buffer * 2;
+            const offset = buffer + Math.floor(Math.random() * (availableRange > 0 ? availableRange : windowSeconds));
+            targetSec = startSec + offset;
+        }
+
         return {
-            hour: startHour,
-            minute,
-            second,
-            timeString: `${String(startHour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`
+            startSec,
+            endSec,
+            targetSec,
+            timeString: this.secondsToTime(targetSec)
+        };
+    }
+
+    /**
+     * Pick a random message variation from the slot's text pool and replace placeholders
+     */
+    pickRandomMessage(slotOrRem, contactName = 'Friend') {
+        let pool = [];
+
+        if (Array.isArray(slotOrRem.messages) && slotOrRem.messages.length > 0) {
+            pool = slotOrRem.messages.filter(m => typeof m === 'string' && m.trim().length > 0);
+        } else if (slotOrRem.message) {
+            pool = [slotOrRem.message];
+        } else if (slotOrRem.oneTime?.message) {
+            pool = [slotOrRem.oneTime.message];
+        }
+
+        if (pool.length === 0) {
+            pool = ['Friendly reminder from WhatsApp! 💊'];
+        }
+
+        const chosenIndex = Math.floor(Math.random() * pool.length);
+        let text = pool[chosenIndex];
+
+        // Format placeholders
+        const now = new Date();
+        text = text
+            .replace(/\{name\}/gi, contactName)
+            .replace(/\{date\}/gi, now.toLocaleDateString())
+            .replace(/\{time\}/gi, now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+
+        return {
+            text,
+            variationIndex: chosenIndex + 1,
+            totalVariations: pool.length
         };
     }
 
@@ -181,10 +268,19 @@ class ReminderScheduler {
         const items = [];
 
         reminders.forEach(rem => {
-            // 1. Continuous (Daily) Reminders
+            // 1. Continuous (Daily) Reminders - supports arbitrary number of slots & flexible windows!
             if (rem.type === 'continuous' && Array.isArray(rem.slots)) {
                 rem.slots.forEach(slot => {
-                    const r = this.getRandomTimeInHour(slot.startHour);
+                    const startTime = slot.startTime || (slot.startHour !== undefined ? `${String(slot.startHour).padStart(2, '0')}:00` : '08:00');
+                    const endTime = slot.endTime || (slot.endHour !== undefined ? `${String(slot.endHour).padStart(2, '0')}:00` : '09:00');
+
+                    const timing = this.getRandomTimeInWindow(startTime, endTime);
+
+                    // Normalize messages array
+                    const messages = Array.isArray(slot.messages) && slot.messages.length > 0
+                        ? slot.messages
+                        : (slot.message ? [slot.message] : ['Friendly daily routine reminder 💊']);
+
                     items.push({
                         planItemId: `${rem.id}_slot_${slot.id}`,
                         reminderId: rem.id,
@@ -194,12 +290,13 @@ class ReminderScheduler {
                         contactName: rem.contactName || 'Recipient',
                         slotId: slot.id,
                         slotName: slot.name || `Slot ${slot.id}`,
-                        startHour: slot.startHour,
-                        endHour: slot.endHour,
-                        randomMinute: r.minute,
-                        randomSecond: r.second,
-                        targetTime: r.timeString,
-                        message: slot.message || '',
+                        startTime,
+                        endTime,
+                        startSec: timing.startSec,
+                        endSec: timing.endSec,
+                        targetSec: timing.targetSec,
+                        targetTime: timing.timeString,
+                        messages,
                         enabled: Boolean(rem.enabled && slot.enabled),
                         sent: false,
                         sentAt: null,
@@ -207,12 +304,17 @@ class ReminderScheduler {
                     });
                 });
             }
-            // 2. One-Time Scheduled Messages
+            // 2. One-Time Scheduled Messages (e.g. Birthday at midnight 00:00)
             else if (rem.type === 'one_time' && rem.oneTime) {
-                // If scheduled for today
                 if (rem.oneTime.date === dateStr) {
                     const isDelivered = rem.oneTime.status === 'delivered';
                     const targetTime = rem.oneTime.time ? `${rem.oneTime.time}:00` : '00:00:00';
+                    const targetSec = this.timeToSeconds(targetTime);
+
+                    const messages = Array.isArray(rem.oneTime.messages) && rem.oneTime.messages.length > 0
+                        ? rem.oneTime.messages
+                        : (rem.oneTime.message ? [rem.oneTime.message] : ['Happy Birthday! 🎂 Wishing you the best!']);
+
                     items.push({
                         planItemId: `${rem.id}_onetime`,
                         reminderId: rem.id,
@@ -221,13 +323,14 @@ class ReminderScheduler {
                         phone: rem.phone,
                         contactName: rem.contactName || 'Recipient',
                         slotId: 0,
-                        slotName: 'Scheduled One-Time Auto Message',
-                        startHour: parseInt(targetTime.split(':')[0], 10),
-                        endHour: parseInt(targetTime.split(':')[0], 10) + 1,
-                        randomMinute: parseInt(targetTime.split(':')[1], 10),
-                        randomSecond: 0,
+                        slotName: 'Scheduled Auto Message',
+                        startTime: rem.oneTime.time || '00:00',
+                        endTime: rem.oneTime.time || '00:00',
+                        startSec: targetSec,
+                        endSec: targetSec + 3600,
+                        targetSec: targetSec,
                         targetTime: targetTime,
-                        message: rem.oneTime.message || '',
+                        messages,
                         enabled: Boolean(rem.enabled && !isDelivered),
                         sent: isDelivered,
                         sentAt: rem.oneTime.deliveredAt || null,
@@ -273,27 +376,34 @@ class ReminderScheduler {
                     const planItemId = `${rem.id}_slot_${slot.id}`;
                     const existing = currentItems.find(i => i.planItemId === planItemId);
 
+                    const startTime = slot.startTime || (slot.startHour !== undefined ? `${String(slot.startHour).padStart(2, '0')}:00` : '08:00');
+                    const endTime = slot.endTime || (slot.endHour !== undefined ? `${String(slot.endHour).padStart(2, '0')}:00` : '09:00');
+                    const messages = Array.isArray(slot.messages) && slot.messages.length > 0
+                        ? slot.messages
+                        : (slot.message ? [slot.message] : ['Friendly daily routine reminder 💊']);
+
                     if (existing) {
                         existing.reminderTitle = rem.title;
                         existing.phone = rem.phone;
                         existing.contactName = rem.contactName;
                         existing.slotName = slot.name;
-                        existing.message = slot.message;
+                        existing.messages = messages;
                         existing.enabled = Boolean(rem.enabled && slot.enabled);
 
-                        // If hour was changed and not sent, re-roll
-                        if (existing.startHour !== slot.startHour && !existing.sent) {
-                            existing.startHour = slot.startHour;
-                            existing.endHour = slot.endHour;
-                            const r = this.getRandomTimeInHour(slot.startHour);
-                            existing.randomMinute = r.minute;
-                            existing.randomSecond = r.second;
-                            existing.targetTime = r.timeString;
+                        // If window timing was changed and slot not yet sent, re-calculate target
+                        if ((existing.startTime !== startTime || existing.endTime !== endTime) && !existing.sent) {
+                            existing.startTime = startTime;
+                            existing.endTime = endTime;
+                            const timing = this.getRandomTimeInWindow(startTime, endTime);
+                            existing.startSec = timing.startSec;
+                            existing.endSec = timing.endSec;
+                            existing.targetSec = timing.targetSec;
+                            existing.targetTime = timing.timeString;
                             changed = true;
                         }
                         updatedItems.push(existing);
                     } else {
-                        const r = this.getRandomTimeInHour(slot.startHour);
+                        const timing = this.getRandomTimeInWindow(startTime, endTime);
                         updatedItems.push({
                             planItemId,
                             reminderId: rem.id,
@@ -303,12 +413,13 @@ class ReminderScheduler {
                             contactName: rem.contactName || 'Recipient',
                             slotId: slot.id,
                             slotName: slot.name || `Slot ${slot.id}`,
-                            startHour: slot.startHour,
-                            endHour: slot.endHour,
-                            randomMinute: r.minute,
-                            randomSecond: r.second,
-                            targetTime: r.timeString,
-                            message: slot.message || '',
+                            startTime,
+                            endTime,
+                            startSec: timing.startSec,
+                            endSec: timing.endSec,
+                            targetSec: timing.targetSec,
+                            targetTime: timing.timeString,
+                            messages,
                             enabled: Boolean(rem.enabled && slot.enabled),
                             sent: false,
                             sentAt: null,
@@ -323,13 +434,18 @@ class ReminderScheduler {
                     const existing = currentItems.find(i => i.planItemId === planItemId);
                     const isDelivered = rem.oneTime.status === 'delivered';
                     const targetTime = rem.oneTime.time ? `${rem.oneTime.time}:00` : '00:00:00';
+                    const targetSec = this.timeToSeconds(targetTime);
+                    const messages = Array.isArray(rem.oneTime.messages) && rem.oneTime.messages.length > 0
+                        ? rem.oneTime.messages
+                        : (rem.oneTime.message ? [rem.oneTime.message] : ['Happy Birthday! 🎂']);
 
                     if (existing) {
                         existing.reminderTitle = rem.title;
                         existing.phone = rem.phone;
                         existing.contactName = rem.contactName;
-                        existing.message = rem.oneTime.message;
+                        existing.messages = messages;
                         existing.targetTime = targetTime;
+                        existing.targetSec = targetSec;
                         existing.enabled = Boolean(rem.enabled && !isDelivered);
                         existing.sent = isDelivered;
                         updatedItems.push(existing);
@@ -342,13 +458,14 @@ class ReminderScheduler {
                             phone: rem.phone,
                             contactName: rem.contactName || 'Recipient',
                             slotId: 0,
-                            slotName: 'Scheduled One-Time Auto Message',
-                            startHour: parseInt(targetTime.split(':')[0], 10),
-                            endHour: parseInt(targetTime.split(':')[0], 10) + 1,
-                            randomMinute: parseInt(targetTime.split(':')[1], 10),
-                            randomSecond: 0,
+                            slotName: 'Scheduled Auto Message',
+                            startTime: rem.oneTime.time || '00:00',
+                            endTime: rem.oneTime.time || '00:00',
+                            startSec: targetSec,
+                            endSec: targetSec + 3600,
+                            targetSec: targetSec,
                             targetTime: targetTime,
-                            message: rem.oneTime.message || '',
+                            messages,
                             enabled: Boolean(rem.enabled && !isDelivered),
                             sent: isDelivered,
                             sentAt: rem.oneTime.deliveredAt || null,
@@ -394,25 +511,21 @@ class ReminderScheduler {
 
                 let shouldTrigger = false;
 
-                // Case A: Continuous randomized window
+                // Continuous custom window check
                 if (item.type === 'continuous') {
-                    if (current.hour === item.startHour) {
-                        if (current.minute > item.randomMinute ||
-                           (current.minute === item.randomMinute && current.second >= item.randomSecond)) {
-                            shouldTrigger = true;
-                        }
-                    } else if (this.config?.catchUpIfMissed && current.hour >= item.startHour && current.hour < item.endHour) {
-                        console.log(`[SCHEDULER] Catch-up triggered for continuous slot: ${item.reminderTitle} -> ${item.slotName}`);
+                    // Check if current time has reached or passed targetSec
+                    if (current.totalSeconds >= item.targetSec && current.totalSeconds <= item.endSec) {
+                        shouldTrigger = true;
+                    }
+                    // Catch-up mode: if server woke up after sleep, but is still within window
+                    else if (this.config?.catchUpIfMissed && current.totalSeconds >= item.startSec && current.totalSeconds <= item.endSec) {
+                        console.log(`[SCHEDULER] Catch-up triggered for slot: ${item.reminderTitle} -> ${item.slotName}`);
                         shouldTrigger = true;
                     }
                 }
-                // Case B: One-Time scheduled message (e.g. Birthday at midnight 00:00)
+                // One-Time scheduled message check
                 else if (item.type === 'one_time') {
-                    const targetParts = (item.targetTime || '00:00:00').split(':');
-                    const targetH = parseInt(targetParts[0], 10);
-                    const targetM = parseInt(targetParts[1], 10);
-
-                    if (current.hour > targetH || (current.hour === targetH && current.minute >= targetM)) {
+                    if (current.totalSeconds >= item.targetSec) {
                         console.log(`[SCHEDULER] One-Time Scheduled Trigger reached for ${item.reminderTitle} (Target: ${item.targetTime}, Now: ${current.time})`);
                         shouldTrigger = true;
                     }
@@ -430,7 +543,8 @@ class ReminderScheduler {
     }
 
     async dispatchItem(item, isManualTest = false) {
-        const messageText = item.message || 'Friendly WhatsApp reminder!';
+        // Pick one message at random from variations
+        const { text, variationIndex, totalVariations } = this.pickRandomMessage(item, item.contactName);
 
         try {
             const result = await this.onTriggerReminder({
@@ -439,8 +553,10 @@ class ReminderScheduler {
                 slotName: item.slotName,
                 phone: item.phone,
                 contactName: item.contactName,
-                message: messageText,
+                message: text,
                 type: item.type,
+                variationIndex,
+                totalVariations,
                 isManualTest
             });
 
@@ -455,7 +571,8 @@ class ReminderScheduler {
                     slotName: item.slotName,
                     phone: item.phone,
                     contactName: item.contactName,
-                    message: messageText,
+                    message: text,
+                    variationInfo: totalVariations > 1 ? `Variation #${variationIndex} of ${totalVariations}` : null,
                     timestamp: nowIso,
                     status: 'delivered',
                     messageId: result.messageId || null,
@@ -468,7 +585,6 @@ class ReminderScheduler {
                     item.status = 'delivered';
                     this.saveDailyPlan();
 
-                    // If one-time, update parent config so it stays marked delivered
                     if (item.type === 'one_time' && Array.isArray(this.config?.reminders)) {
                         const parent = this.config.reminders.find(r => r.id === item.reminderId);
                         if (parent && parent.oneTime) {
@@ -494,9 +610,6 @@ class ReminderScheduler {
         }
     }
 
-    /**
-     * Trigger test message for a specific reminder
-     */
     async triggerTest(reminderId, slotId = null) {
         const reminders = Array.isArray(this.config?.reminders) ? this.config.reminders : [];
         const rem = reminders.find(r => r.id === reminderId);
@@ -509,15 +622,14 @@ class ReminderScheduler {
             throw new Error(`Recipient phone number is empty for "${rem.title}". Please set a phone number first.`);
         }
 
-        let message = '';
+        let targetSlot = null;
         let slotName = 'Test Message';
 
         if (rem.type === 'continuous') {
-            const slot = (rem.slots || []).find(s => s.id === parseInt(slotId, 10)) || rem.slots?.[0];
-            message = slot?.message || 'Daily continuous test reminder 💊';
-            slotName = slot?.name || 'Continuous Slot';
+            targetSlot = (rem.slots || []).find(s => s.id === parseInt(slotId, 10)) || rem.slots?.[0];
+            slotName = targetSlot?.name || 'Continuous Slot';
         } else {
-            message = rem.oneTime?.message || 'One-time test message 🎂';
+            targetSlot = rem.oneTime || {};
             slotName = 'One-Time Message';
         }
 
@@ -528,7 +640,7 @@ class ReminderScheduler {
             slotName,
             phone: rem.phone,
             contactName: rem.contactName,
-            message
+            messages: targetSlot.messages || (targetSlot.message ? [targetSlot.message] : ['Test reminder! 💊'])
         };
 
         return await this.dispatchItem(dummyItem, true);

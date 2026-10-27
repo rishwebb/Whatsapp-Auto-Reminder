@@ -1,44 +1,58 @@
 {
   "timezone": "Asia/Kolkata",
   "catchUpIfMissed": true,
+  "simulateTyping": true,
   "reminders": [
     {
-      "id": "rem_default_medicine",
-      "title": "Daily Medicine Routine",
+      "id": "rem_daily_routine",
+      "title": "Daily Medicine & Hydration",
       "type": "continuous",
       "phone": "",
-      "contactName": "Friend / Mom",
+      "contactName": "Mom / Friend",
       "enabled": true,
       "slots": [
         {
           "id": 1,
           "name": "Morning Medicine",
-          "startHour": 8,
-          "endHour": 9,
-          "message": "Good morning! Time for your morning medicines 💊 Have a wonderful day ahead!",
+          "startTime": "08:00",
+          "endTime": "08:20",
+          "messages": [
+            "Good morning {name}! Time for your morning medicines 💊 Have a great day ahead!",
+            "Morning! Quick reminder to take your morning pills and drink some water 💧",
+            "Hey {name}! Rise and shine, time for your medicines ☀️ Take care!",
+            "Morning reminder! Don't forget your medicines today 💊"
+          ],
           "enabled": true
         },
         {
           "id": 2,
-          "name": "Afternoon Medicine",
-          "startHour": 13,
-          "endHour": 14,
-          "message": "Afternoon reminder! Please remember to take your afternoon medicines 💧 Stay hydrated!",
+          "name": "Afternoon Hydration & Meds",
+          "startTime": "13:00",
+          "endTime": "13:15",
+          "messages": [
+            "Afternoon reminder {name}! Please take your afternoon medicines 💧 Stay hydrated!",
+            "Hey! Time for your afternoon pills 💊 Hope your day is going well!",
+            "Quick check-in! Don't forget your afternoon medicines 💧"
+          ],
           "enabled": true
         },
         {
           "id": 3,
           "name": "Night Medicine",
-          "startHour": 20,
-          "endHour": 21,
-          "message": "Good evening! Don't forget to take your night medicines 🌙 Sleep well and rest up!",
+          "startTime": "20:30",
+          "endTime": "22:00",
+          "messages": [
+            "Good evening {name}! Don't forget to take your night medicines before bed 🌙 Sleep well!",
+            "Night reminder! Time for your evening medicines 💊 Sweet dreams!",
+            "Hey {name}! Before you go to sleep, remember your night medicines 🌙 Rest up!"
+          ],
           "enabled": true
         }
       ]
     },
     {
-      "id": "rem_sample_birthday",
-      "title": "Midnight Birthday Wish",
+      "id": "rem_birthday_surprise",
+      "title": "Midnight Birthday Surprise",
       "type": "one_time",
       "phone": "",
       "contactName": "Bestie",
@@ -46,7 +60,11 @@
       "oneTime": {
         "date": "2026-10-28",
         "time": "00:00",
-        "message": "Happy Birthday!! 🎂🎉 Wishing you another year of massive wins, good health, and pure happiness!",
+        "messages": [
+          "Happy Birthday!! 🎂🎉 Wishing you another year of massive wins, good health, and pure happiness!",
+          "HAPPY BIRTHDAY!! 🥳🎂 May all your dreams turn into reality this year!",
+          "Birthday shoutout! 🎉🎂 Wishing you the happiest and most blessed birthday ever!"
+        ],
         "status": "pending",
         "deliveredAt": null
       }

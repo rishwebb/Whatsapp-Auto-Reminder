@@ -56,6 +56,7 @@ function loadConfig() {
 
     config.timezone = config.timezone || 'Asia/Kolkata';
     config.catchUpIfMissed = config.catchUpIfMissed !== undefined ? config.catchUpIfMissed : true;
+    config.simulateTyping = config.simulateTyping !== undefined ? config.simulateTyping : true;
     config.reminders = Array.isArray(config.reminders) ? config.reminders : [];
 }
 
@@ -120,6 +121,7 @@ function scheduleReconnect(delay = null) {
     }, waitTime);
 }
 
+// Stealth Presence Shield
 async function enforceOfflinePresence() {
     if (!sock || connectionState !== 'CONNECTED') return;
     try {
@@ -229,7 +231,8 @@ async function startWhatsApp() {
     }
 }
 
-async function sendTextMessage(targetPhone, text) {
+// Send WhatsApp text message with simulated typing
+async function sendTextMessage(targetPhone, text, simulateTyping = true) {
     if (!sock || connectionState !== 'CONNECTED') {
         throw new Error('WhatsApp is not connected. Please scan the QR code first!');
     }
@@ -240,9 +243,21 @@ async function sendTextMessage(targetPhone, text) {
     }
 
     const jid = `${clean}@s.whatsapp.net`;
+
+    if (simulateTyping && config.simulateTyping !== false) {
+        try {
+            await sock.sendPresenceUpdate('composing', jid);
+            const typingDelay = Math.min(3000, Math.max(1200, (text || '').length * 35));
+            await new Promise(r => setTimeout(r, typingDelay));
+            await sock.sendPresenceUpdate('paused', jid);
+        } catch (_) {}
+    }
+
     console.log(`[WHATSAPP SEND] Sending to ${jid}...`);
     const sent = await sock.sendMessage(jid, { text });
     console.log(`[WHATSAPP SEND SUCCESS] Delivered to ${jid}! ID: ${sent.key.id}`);
+
+    setTimeout(enforceOfflinePresence, 1500);
 
     return {
         success: true,
@@ -258,9 +273,9 @@ const scheduler = new ReminderScheduler({
     configFile: CONFIG_FILE,
     dailyPlanFile: DAILY_PLAN_FILE,
     historyFile: HISTORY_FILE,
-    onTriggerReminder: async ({ reminderTitle, slotName, phone, message, type, isManualTest }) => {
+    onTriggerReminder: async ({ reminderTitle, slotName, phone, message, type, isManualTest, variationIndex, totalVariations }) => {
         try {
-            const res = await sendTextMessage(phone, message);
+            const res = await sendTextMessage(phone, message, true);
             broadcastEvent('REMINDER_SENT', {
                 reminderTitle,
                 slotName,
@@ -268,6 +283,7 @@ const scheduler = new ReminderScheduler({
                 message,
                 type,
                 isManualTest,
+                variationInfo: totalVariations > 1 ? `Variation #${variationIndex} of ${totalVariations}` : null,
                 timestamp: res.timestamp
             });
             return res;
@@ -325,12 +341,12 @@ app.get('/api/events', (req, res) => {
     });
 });
 
-// Save global settings (Timezone & catchup)
 app.post('/api/settings', (req, res) => {
     try {
-        const { timezone, catchUpIfMissed } = req.body;
+        const { timezone, catchUpIfMissed, simulateTyping } = req.body;
         if (timezone) config.timezone = timezone;
         if (catchUpIfMissed !== undefined) config.catchUpIfMissed = Boolean(catchUpIfMissed);
+        if (simulateTyping !== undefined) config.simulateTyping = Boolean(simulateTyping);
 
         saveConfig();
         scheduler.updateConfig(config);
@@ -341,7 +357,7 @@ app.post('/api/settings', (req, res) => {
     }
 });
 
-// Create a new reminder (Continuous or One-Time)
+// Create a new reminder (Arbitrary slots, custom time window, multiple message variations)
 app.post('/api/reminders', (req, res) => {
     try {
         const { title, type, phone, contactName, enabled, slots, oneTime } = req.body;
@@ -362,16 +378,40 @@ app.post('/api/reminders', (req, res) => {
         };
 
         if (newReminder.type === 'continuous') {
-            newReminder.slots = Array.isArray(slots) && slots.length > 0 ? slots : [
-                { id: 1, name: 'Morning Medicine', startHour: 8, endHour: 9, message: 'Good morning! Time for your morning medicines 💊 Have a great day!', enabled: true },
-                { id: 2, name: 'Afternoon Medicine', startHour: 13, endHour: 14, message: 'Afternoon reminder! Please remember to take your afternoon medicines 💧 Stay hydrated!', enabled: true },
-                { id: 3, name: 'Night Medicine', startHour: 20, endHour: 21, message: 'Good evening! Don\'t forget to take your night medicines 🌙 Sleep well!', enabled: true }
-            ];
+            newReminder.slots = Array.isArray(slots) && slots.length > 0
+                ? slots.map((s, idx) => ({
+                    id: s.id || idx + 1,
+                    name: (s.name || `Slot ${idx + 1}`).trim(),
+                    startTime: s.startTime || '08:00',
+                    endTime: s.endTime || '09:00',
+                    messages: Array.isArray(s.messages) && s.messages.length > 0
+                        ? s.messages.map(m => m.trim()).filter(Boolean)
+                        : (s.message ? [s.message.trim()] : ['Friendly reminder 💊']),
+                    enabled: s.enabled !== undefined ? Boolean(s.enabled) : true
+                }))
+                : [
+                    {
+                        id: 1,
+                        name: 'Morning Routine',
+                        startTime: '08:00',
+                        endTime: '09:00',
+                        messages: [
+                            'Good morning! Time for your morning medicines 💊 Have a great day!',
+                            'Morning! Quick reminder to take your meds and drink water 💧'
+                        ],
+                        enabled: true
+                    }
+                ];
         } else {
+            const rawMessages = Array.isArray(oneTime?.messages) && oneTime.messages.length > 0
+                ? oneTime.messages.map(m => m.trim()).filter(Boolean)
+                : (oneTime?.message ? [oneTime.message.trim()] : ['Happy Birthday! 🎂 Wishing you all the best!']);
+
             newReminder.oneTime = {
                 date: oneTime?.date || scheduler.getTimeInZone(config.timezone).date,
                 time: oneTime?.time || '00:00',
-                message: oneTime?.message || 'Happy Birthday! 🎂 Wishing you all the best!',
+                messages: rawMessages,
+                message: rawMessages[0] || '',
                 status: 'pending',
                 deliveredAt: null
             };
@@ -408,13 +448,30 @@ app.put('/api/reminders/:id', (req, res) => {
         if (enabled !== undefined) current.enabled = Boolean(enabled);
 
         if (current.type === 'continuous' && Array.isArray(slots)) {
-            current.slots = slots;
+            current.slots = slots.map((s, idx) => ({
+                id: s.id || idx + 1,
+                name: (s.name || `Slot ${idx + 1}`).trim(),
+                startTime: s.startTime || '08:00',
+                endTime: s.endTime || '09:00',
+                messages: Array.isArray(s.messages) && s.messages.length > 0
+                    ? s.messages.map(m => m.trim()).filter(Boolean)
+                    : (s.message ? [s.message.trim()] : ['Friendly reminder 💊']),
+                enabled: s.enabled !== undefined ? Boolean(s.enabled) : true
+            }));
         }
 
         if (current.type === 'one_time' && oneTime) {
+            const rawMessages = Array.isArray(oneTime.messages) && oneTime.messages.length > 0
+                ? oneTime.messages.map(m => m.trim()).filter(Boolean)
+                : (oneTime.message ? [oneTime.message.trim()] : (current.oneTime?.messages || ['Happy Birthday! 🎂']));
+
             current.oneTime = {
                 ...current.oneTime,
-                ...oneTime
+                date: oneTime.date || current.oneTime?.date,
+                time: oneTime.time || current.oneTime?.time,
+                messages: rawMessages,
+                message: rawMessages[0] || '',
+                status: oneTime.status || current.oneTime?.status || 'pending'
             };
         }
 
@@ -445,7 +502,7 @@ app.delete('/api/reminders/:id', (req, res) => {
     }
 });
 
-// Trigger test message for a specific reminder
+// Trigger test message
 app.post('/api/reminders/:id/test', async (req, res) => {
     try {
         const { id } = req.params;
@@ -461,7 +518,7 @@ app.post('/api/reminders/:id/test', async (req, res) => {
     }
 });
 
-// Re-roll daily plan random minutes
+// Re-roll daily plan
 app.post('/api/regenerate-plan', (req, res) => {
     try {
         const current = scheduler.getTimeInZone(config.timezone);
