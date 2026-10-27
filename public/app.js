@@ -463,12 +463,17 @@ function renderScheduleTimeline() {
                 <span class="target-time">${formatTime12h(item.targetTime)}</span>
             </div>
 
-            <div>
+            <div class="flex items-center gap-2">
                 ${statusBadge}
+                <button class="btn btn-xs btn-outline btn-timeline-delete" data-id="${item.reminderId}" title="Delete Reminder">🗑️</button>
             </div>
         `;
 
         slotsTimeline.appendChild(card);
+    });
+
+    document.querySelectorAll('.btn-timeline-delete').forEach(b => {
+        b.addEventListener('click', () => handleDeleteReminder(b.dataset.id));
     });
 }
 

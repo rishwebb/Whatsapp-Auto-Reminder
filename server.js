@@ -59,7 +59,8 @@ function loadConfig() {
     config.timezone = config.timezone || 'Asia/Kolkata';
     config.catchUpIfMissed = config.catchUpIfMissed !== undefined ? config.catchUpIfMissed : true;
     config.simulateTyping = config.simulateTyping !== undefined ? config.simulateTyping : true;
-    config.reminders = Array.isArray(config.reminders) ? config.reminders : [];
+    config.reminders = (Array.isArray(config.reminders) ? config.reminders : [])
+        .filter(r => r.id !== 'rem_daily_routine' && r.id !== 'rem_birthday_surprise' && r.phone && String(r.phone).trim() !== '');
 }
 
 function saveConfig() {
@@ -653,6 +654,18 @@ async function bootstrap() {
 
     await cloudSync.restoreFromCloud();
     loadConfig();
+
+    // 🧹 Purge any legacy sample/dummy reminders from cloud database
+    const initialRemCount = (config.reminders || []).length;
+    config.reminders = (config.reminders || []).filter(r => 
+        r.id !== 'rem_daily_routine' && 
+        r.id !== 'rem_birthday_surprise' && 
+        r.phone && String(r.phone).trim() !== ''
+    );
+    if ((config.reminders || []).length !== initialRemCount) {
+        saveConfig();
+        console.log('[CONFIG] Auto-purged sample dummy reminders from cloud database.');
+    }
 
     await scheduler.init(config);
 

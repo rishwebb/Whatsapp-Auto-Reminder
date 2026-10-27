@@ -264,7 +264,8 @@ class ReminderScheduler {
      * Generate daily timetable combining both continuous random slots and one-time messages
      */
     generateNewDailyPlan(dateStr) {
-        const reminders = Array.isArray(this.config?.reminders) ? this.config.reminders : [];
+        const reminders = (Array.isArray(this.config?.reminders) ? this.config.reminders : [])
+            .filter(r => r.phone && String(r.phone).trim() !== '' && r.id !== 'rem_daily_routine' && r.id !== 'rem_birthday_surprise');
         const items = [];
 
         reminders.forEach(rem => {
@@ -366,7 +367,8 @@ class ReminderScheduler {
         }
 
         const currentItems = this.dailyPlan.items;
-        const reminders = Array.isArray(this.config?.reminders) ? this.config.reminders : [];
+        const reminders = (Array.isArray(this.config?.reminders) ? this.config.reminders : [])
+            .filter(r => r.phone && String(r.phone).trim() !== '' && r.id !== 'rem_daily_routine' && r.id !== 'rem_birthday_surprise');
         const updatedItems = [];
         let changed = false;
 
