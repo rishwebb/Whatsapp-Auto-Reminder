@@ -14,13 +14,44 @@ const {
     fetchLatestBaileysVersion,
     Browsers
 } = require('@whiskeysockets/baileys');
-const NodeCache = require('@cacheable/node-cache');
-
 const cloudSync = require('./cloudSync');
 const ReminderScheduler = require('./scheduler');
 
+// Clean self-contained retry cache implementing get/set/del/flushAll for Baileys
+class MemoryCache {
+    constructor(ttlMs = 3600000) {
+        this.cache = new Map();
+        this.ttlMs = ttlMs;
+    }
+    get(key) {
+        const item = this.cache.get(key);
+        if (!item) return undefined;
+        if (Date.now() > item.expiresAt) {
+            this.cache.delete(key);
+            return undefined;
+        }
+        return item.value;
+    }
+    set(key, value) {
+        this.cache.set(key, { value, expiresAt: Date.now() + this.ttlMs });
+        if (this.cache.size > 2000) {
+            const oldestKey = this.cache.keys().next().value;
+            this.cache.delete(oldestKey);
+        }
+    }
+    del(key) {
+        this.cache.delete(key);
+    }
+    delete(key) {
+        this.cache.delete(key);
+    }
+    flushAll() {
+        this.cache.clear();
+    }
+}
+
 // Long-lived message retry cache & store for WhatsApp End-to-End Encryption
-const msgRetryCounterCache = new NodeCache({ stdTTL: 3600, useClones: false });
+const msgRetryCounterCache = new MemoryCache(3600000);
 const messageStore = new Map();
 
 function saveMessage(id, message) {
