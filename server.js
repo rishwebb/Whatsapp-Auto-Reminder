@@ -11,11 +11,33 @@ const {
     default: makeWASocket,
     DisconnectReason,
     useMultiFileAuthState,
-    fetchLatestBaileysVersion
+    fetchLatestBaileysVersion,
+    Browsers
 } = require('@whiskeysockets/baileys');
+const NodeCache = require('@cacheable/node-cache');
 
 const cloudSync = require('./cloudSync');
 const ReminderScheduler = require('./scheduler');
+
+// Long-lived message retry cache & store for WhatsApp End-to-End Encryption
+const msgRetryCounterCache = new NodeCache({ stdTTL: 3600, useClones: false });
+const messageStore = new Map();
+
+function saveMessage(id, message) {
+    if (!id || !message) return;
+    messageStore.set(id, message);
+    if (messageStore.size > 2000) {
+        const oldestKey = messageStore.keys().next().value;
+        messageStore.delete(oldestKey);
+    }
+}
+
+async function getMessage(key) {
+    if (key?.id && messageStore.has(key.id)) {
+        return messageStore.get(key.id);
+    }
+    return undefined;
+}
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -132,6 +154,7 @@ function cleanupSocket() {
         try {
             sock.ev.removeAllListeners('connection.update');
             sock.ev.removeAllListeners('creds.update');
+            sock.ev.removeAllListeners('messages.upsert');
             sock.end?.();
         } catch (_) {}
         sock = null;
@@ -183,13 +206,23 @@ async function startWhatsApp() {
             version,
             logger: pino({ level: 'silent' }),
             auth: state,
-            markOnlineOnConnect: false,
-            browser: ['WA Reminder Dispatcher', 'Safari', '17.0'],
+            msgRetryCounterCache,
+            getMessage,
+            browser: Browsers.ubuntu('Chrome'),
             generateHighQualityLinkPreview: false,
             syncFullHistory: false,
             connectTimeoutMs: 60000,
             defaultQueryTimeoutMs: 60000,
             keepAliveIntervalMs: 30000
+        });
+
+        sock.ev.on('messages.upsert', async ({ messages }) => {
+            if (!Array.isArray(messages)) return;
+            for (const m of messages) {
+                if (m.key?.id && m.message) {
+                    saveMessage(m.key.id, m.message);
+                }
+            }
         });
 
         sock.ev.on('creds.update', async () => {
@@ -283,9 +316,10 @@ async function sendTextMessage(targetPhone, text, simulateTyping = true) {
 
     console.log(`[WHATSAPP SEND] Sending to ${jid}...`);
     const sent = await sock.sendMessage(jid, { text });
+    if (sent?.key?.id && sent?.message) {
+        saveMessage(sent.key.id, sent.message);
+    }
     console.log(`[WHATSAPP SEND SUCCESS] Delivered to ${jid}! ID: ${sent.key.id}`);
-
-    setTimeout(enforceOfflinePresence, 1500);
 
     return {
         success: true,

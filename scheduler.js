@@ -513,15 +513,9 @@ class ReminderScheduler {
 
                 let shouldTrigger = false;
 
-                // Continuous custom window check
+                // Continuous custom window check: fires when current time reaches or passes randomized targetSec
                 if (item.type === 'continuous') {
-                    // Check if current time has reached or passed targetSec
                     if (current.totalSeconds >= item.targetSec && current.totalSeconds <= item.endSec) {
-                        shouldTrigger = true;
-                    }
-                    // Catch-up mode: if server woke up after sleep, but is still within window
-                    else if (this.config?.catchUpIfMissed && current.totalSeconds >= item.startSec && current.totalSeconds <= item.endSec) {
-                        console.log(`[SCHEDULER] Catch-up triggered for slot: ${item.reminderTitle} -> ${item.slotName}`);
                         shouldTrigger = true;
                     }
                 }

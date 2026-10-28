@@ -263,6 +263,23 @@ function formatTime12h(timeStr) {
     return `${hour12}:${m}${s} ${suffix}`;
 }
 
+function formatIsoToLocalTime(isoStr) {
+    if (!isoStr) return '--:--';
+    try {
+        const d = new Date(isoStr);
+        const tz = appState.config?.timezone || 'Asia/Kolkata';
+        return d.toLocaleTimeString('en-US', {
+            timeZone: tz,
+            hour: 'numeric',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        });
+    } catch (_) {
+        return formatTime12h(isoStr.split('T')[1]?.split('.')[0]);
+    }
+}
+
 function calculateWindowSpanText(startStr, endStr) {
     const sParts = (startStr || '08:00').split(':').map(Number);
     const eParts = (endStr || '09:00').split(':').map(Number);
@@ -431,7 +448,7 @@ function renderScheduleTimeline() {
 
         let statusBadge = '';
         if (isDelivered) {
-            statusBadge = `<span class="slot-status-badge status-badge-delivered">✓ Delivered at ${formatTime12h(item.sentAt?.split('T')[1]?.split('.')[0])}</span>`;
+            statusBadge = `<span class="slot-status-badge status-badge-delivered">✓ Delivered at ${formatIsoToLocalTime(item.sentAt)}</span>`;
         } else if (isPending) {
             statusBadge = `<span class="slot-status-badge status-badge-pending">⏳ Scheduled</span>`;
         } else {
