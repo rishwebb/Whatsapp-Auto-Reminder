@@ -1119,6 +1119,32 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
     padding: 24px !important;
 }
 
+.history-footer {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: center;
+}
+
+#btnToggleHistory {
+    width: 100%;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#btnToggleHistory:hover {
+    background: rgba(16, 185, 129, 0.08);
+    border-color: rgba(16, 185, 129, 0.3);
+    color: #f1f5f9;
+}
+
 /* Toast */
 .toast-container {
     position: fixed;

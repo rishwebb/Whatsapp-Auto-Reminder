@@ -115,6 +115,10 @@ const countOneTime = document.getElementById('countOneTime');
 
 const historyTableBody = document.getElementById('historyTableBody');
 const historyCounter = document.getElementById('historyCounter');
+const historyFooter = document.getElementById('historyFooter');
+const btnToggleHistory = document.getElementById('btnToggleHistory');
+const toggleHistoryText = document.getElementById('toggleHistoryText');
+const toggleHistoryIcon = document.getElementById('toggleHistoryIcon');
 const toastContainer = document.getElementById('toastContainer');
 
 // Modal Elements
@@ -497,6 +501,9 @@ function renderScheduleTimeline() {
 // -------------------------------------------------------------
 // Render History Logs Table
 // -------------------------------------------------------------
+let isHistoryExpanded = false;
+const HISTORY_INITIAL_LIMIT = 5;
+
 function renderHistory() {
     const history = appState.scheduler?.history || [];
     historyCounter.textContent = `${history.length} Delivered`;
@@ -507,11 +514,30 @@ function renderHistory() {
                 <td colspan="4" class="empty-state">No reminders delivered yet.</td>
             </tr>
         `;
+        if (historyFooter) historyFooter.style.display = 'none';
         return;
     }
 
+    if (history.length <= HISTORY_INITIAL_LIMIT) {
+        if (historyFooter) historyFooter.style.display = 'none';
+    } else {
+        if (historyFooter) {
+            historyFooter.style.display = 'flex';
+            if (isHistoryExpanded) {
+                if (toggleHistoryText) toggleHistoryText.textContent = 'View Less';
+                if (toggleHistoryIcon) toggleHistoryIcon.textContent = '▲';
+            } else {
+                const remaining = history.length - HISTORY_INITIAL_LIMIT;
+                if (toggleHistoryText) toggleHistoryText.textContent = `View More (${remaining} more)`;
+                if (toggleHistoryIcon) toggleHistoryIcon.textContent = '▼';
+            }
+        }
+    }
+
+    const itemsToDisplay = isHistoryExpanded ? history : history.slice(0, HISTORY_INITIAL_LIMIT);
+
     historyTableBody.innerHTML = '';
-    history.forEach(item => {
+    itemsToDisplay.forEach(item => {
         const tr = document.createElement('tr');
         const timeFormatted = new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         const dateFormatted = new Date(item.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' });
@@ -1000,6 +1026,15 @@ btnUnpair.addEventListener('click', async () => {
     } finally {
         btnUnpair.disabled = false;
         btnUnpair.textContent = 'Unpair';
+    }
+});
+
+// Toggle Delivery History View More / View Less
+btnToggleHistory?.addEventListener('click', () => {
+    isHistoryExpanded = !isHistoryExpanded;
+    renderHistory();
+    if (!isHistoryExpanded) {
+        document.getElementById('historyCard')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 });
 
