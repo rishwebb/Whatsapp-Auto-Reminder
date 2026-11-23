@@ -15,6 +15,7 @@ try {
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { MongoClient } = require('mongodb');
 
 let client = null;
@@ -25,6 +26,7 @@ let configFile = '';
 let dailyPlanFile = '';
 let historyFile = '';
 let authSyncTimeout = null;
+const syncedFileHashes = new Map();
 
 async function initCloudSync(paths = {}) {
     authDir = paths.authDir;
@@ -83,6 +85,10 @@ async function restoreFromCloud() {
                 try {
                     fs.writeFileSync(targetFilePath, doc.content, 'utf8');
                     restoredAuthCount++;
+                    if (doc._id && doc.content) {
+                        const hash = crypto.createHash('md5').update(doc.content).digest('hex');
+                        syncedFileHashes.set(doc._id, hash);
+                    }
                 } catch (e) {
                     console.error(`[CLOUD RESTORE ERROR] Writing ${doc._id}:`, e.message);
                 }
@@ -90,6 +96,14 @@ async function restoreFromCloud() {
             console.log(`[CLOUD RESTORE] Successfully restored ${restoredAuthCount} session files! WhatsApp session is restored. 🎉`);
         } else if (localCredsExist) {
             console.log('[CLOUD RESTORE] Local creds.json already exists. Using active local session.');
+            try {
+                const existing = fs.readdirSync(authDir);
+                for (const f of existing) {
+                    const content = fs.readFileSync(path.join(authDir, f), 'utf8');
+                    const hash = crypto.createHash('md5').update(content).digest('hex');
+                    syncedFileHashes.set(f, hash);
+                }
+            } catch (_) {}
         }
 
         // 2. Restore Configuration
@@ -132,10 +146,10 @@ async function restoreFromCloud() {
 }
 
 /**
- * Debounced synchronization of all auth files from local disk to MongoDB
- * Runs in background without blocking Baileys encryption/decryption
+ * Debounced synchronization of changed auth files from local disk to MongoDB
+ * Uses differential hash-checking to only upload files that actually changed
  */
-function queueAuthSync(delayMs = 4000) {
+function queueAuthSync(delayMs = 25000) {
     if (!isConnected || !db) return;
 
     if (authSyncTimeout) clearTimeout(authSyncTimeout);
@@ -156,11 +170,19 @@ async function syncAuthToCloud() {
 
     const authCollection = db.collection('wa_auth_backup');
     const bulkOps = [];
+    const updatedHashes = [];
 
     for (const file of files) {
         const fullPath = path.join(authDir, file);
         try {
             const content = fs.readFileSync(fullPath, 'utf8');
+            const hash = crypto.createHash('md5').update(content).digest('hex');
+
+            // Skip upload if file content is unchanged since last sync
+            if (syncedFileHashes.get(file) === hash) {
+                continue;
+            }
+
             bulkOps.push({
                 updateOne: {
                     filter: { _id: file },
@@ -168,12 +190,16 @@ async function syncAuthToCloud() {
                     upsert: true
                 }
             });
+            updatedHashes.push({ file, hash });
         } catch (_) {}
     }
 
     if (bulkOps.length > 0) {
         await authCollection.bulkWrite(bulkOps, { ordered: false });
-        console.log(`[CLOUD SYNC] Backed up ${bulkOps.length} auth session files to MongoDB Atlas.`);
+        for (const { file, hash } of updatedHashes) {
+            syncedFileHashes.set(file, hash);
+        }
+        console.log(`[CLOUD SYNC] Delta sync: Backed up ${bulkOps.length} changed auth files to MongoDB Atlas (saved bandwidth on ${files.length - bulkOps.length} unchanged files).`);
     }
 }
 
@@ -231,6 +257,7 @@ async function logReminderHistoryToCloud(logEntry) {
  * Clear auth from cloud on explicit logout
  */
 async function clearCloudAuth() {
+    syncedFileHashes.clear();
     if (!isConnected || !db) return;
     try {
         await db.collection('wa_auth_backup').deleteMany({});

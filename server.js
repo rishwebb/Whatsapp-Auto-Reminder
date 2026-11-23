@@ -242,6 +242,7 @@ async function startWhatsApp() {
             browser: Browsers.ubuntu('Chrome'),
             generateHighQualityLinkPreview: false,
             syncFullHistory: false,
+            shouldIgnoreJid: (jid) => jid?.endsWith('@broadcast') || jid?.endsWith('@newsletter'),
             connectTimeoutMs: 60000,
             defaultQueryTimeoutMs: 60000,
             keepAliveIntervalMs: 30000
@@ -250,6 +251,8 @@ async function startWhatsApp() {
         sock.ev.on('messages.upsert', async ({ messages }) => {
             if (!Array.isArray(messages)) return;
             for (const m of messages) {
+                // Ignore broadcast stories and newsletter updates to save network bandwidth
+                if (m.key?.remoteJid?.endsWith('@broadcast') || m.key?.remoteJid?.endsWith('@newsletter')) continue;
                 if (m.key?.id && m.message) {
                     saveMessage(m.key.id, m.message);
                 }
