@@ -150,6 +150,19 @@ body {
     gap: 16px;
 }
 
+.header-nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-back-portal {
+    font-size: 0.82rem;
+    padding: 7px 14px;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.04);
+}
+
 .brand {
     display: flex;
     align-items: center;
@@ -1380,6 +1393,153 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, se
 .mobile-fab-icon {
     line-height: 1;
     margin-top: -2px;
+}
+
+/* ============================================================ */
+/* 🌌 PORTAL LAUNCHER (BLANK PAGE WITH 2 BUTTONS)              */
+/* ============================================================ */
+.portal-view-container {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 20px;
+    position: relative;
+    z-index: 2;
+    animation: fadeInView 0.35s ease;
+}
+
+.portal-actions-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto;
+}
+
+.portal-choice-btn {
+    width: 100%;
+    padding: 22px 28px;
+    font-family: inherit;
+    font-size: 1.18rem;
+    font-weight: 700;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    letter-spacing: 0.03em;
+    min-height: 72px;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.portal-btn-jp {
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(139, 92, 246, 0.35);
+    color: #f1f5f9;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(139, 92, 246, 0.12);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+.portal-btn-jp:hover {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: rgba(139, 92, 246, 0.6);
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px rgba(139, 92, 246, 0.3);
+}
+
+.portal-btn-reminders {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(6, 182, 212, 0.18));
+    border: 1px solid rgba(16, 185, 129, 0.45);
+    color: #ffffff;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(16, 185, 129, 0.15);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+.portal-btn-reminders:hover {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.32), rgba(6, 182, 212, 0.26));
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px rgba(16, 185, 129, 0.35);
+}
+
+.portal-choice-btn:active {
+    transform: scale(0.96);
+}
+
+/* ============================================================ */
+/* 🚧 UNDER CONSTRUCTION VIEW                                  */
+/* ============================================================ */
+.construction-view-container {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 20px;
+    position: relative;
+    z-index: 2;
+    animation: fadeInView 0.35s ease;
+}
+
+.construction-card {
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-radius: var(--radius-lg);
+    padding: 44px 32px;
+    max-width: 440px;
+    width: 100%;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.construction-icon {
+    font-size: 3.5rem;
+    margin-bottom: 16px;
+    filter: drop-shadow(0 0 16px rgba(245, 158, 11, 0.4));
+}
+
+.construction-title {
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: #f8fafc;
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+}
+
+.construction-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+.btn-back-portal-lg {
+    padding: 12px 24px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    width: 100%;
+    max-width: 220px;
+}
+
+@keyframes fadeInView {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
 }
 
 /* ============================================================ */

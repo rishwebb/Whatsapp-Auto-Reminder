@@ -53,10 +53,14 @@ function showLockScreen() {
 
 function hideLockScreen() {
     const loginOverlay = document.getElementById('loginOverlay');
-    const btnLockDashboard = document.getElementById('btnLockDashboard');
     if (loginOverlay) loginOverlay.classList.add('hidden');
-    if (appState.hasPasswordSet) {
-        if (btnLockDashboard) btnLockDashboard.classList.remove('hidden');
+    const currentHash = window.location.hash;
+    if (currentHash === '#reminders') {
+        switchView('reminders');
+    } else if (currentHash === '#construction') {
+        switchView('construction');
+    } else {
+        switchView('portal');
     }
 }
 
@@ -81,6 +85,46 @@ async function authFetch(url, options = {}) {
 let activeFilter = 'all';
 let eventSource = null;
 let clockInterval = null;
+
+// Views & Navigation Elements
+const portalHomeView = document.getElementById('portalHomeView');
+const constructionView = document.getElementById('constructionView');
+const remindersView = document.getElementById('remindersView');
+const btnNavJapanese = document.getElementById('btnNavJapanese');
+const btnNavReminders = document.getElementById('btnNavReminders');
+const btnBackToPortalFromReminders = document.getElementById('btnBackToPortalFromReminders');
+const btnBackFromConstruction = document.getElementById('btnBackFromConstruction');
+
+function switchView(viewName) {
+    if (portalHomeView) portalHomeView.classList.add('hidden');
+    if (constructionView) constructionView.classList.add('hidden');
+    if (remindersView) remindersView.classList.add('hidden');
+    if (mobileFabAdd) mobileFabAdd.classList.add('hidden');
+
+    if (viewName === 'reminders') {
+        if (remindersView) remindersView.classList.remove('hidden');
+        if (mobileFabAdd && window.innerWidth <= 768) mobileFabAdd.classList.remove('hidden');
+        window.location.hash = '#reminders';
+    } else if (viewName === 'construction') {
+        if (constructionView) constructionView.classList.remove('hidden');
+        window.location.hash = '#construction';
+    } else {
+        if (portalHomeView) portalHomeView.classList.remove('hidden');
+        window.location.hash = '#portal';
+    }
+}
+
+btnNavReminders?.addEventListener('click', () => switchView('reminders'));
+btnNavJapanese?.addEventListener('click', () => switchView('construction'));
+btnBackToPortalFromReminders?.addEventListener('click', () => switchView('portal'));
+btnBackFromConstruction?.addEventListener('click', () => switchView('portal'));
+
+window.addEventListener('hashchange', () => {
+    const hash = window.location.hash;
+    if (hash === '#reminders') switchView('reminders');
+    else if (hash === '#construction') switchView('construction');
+    else switchView('portal');
+});
 
 // DOM Elements
 const btnLockDashboard = document.getElementById('btnLockDashboard');
@@ -1298,5 +1342,13 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (isAuthenticated) {
         connectSSE();
         fetchStatus();
+        const currentHash = window.location.hash;
+        if (currentHash === '#reminders') {
+            switchView('reminders');
+        } else if (currentHash === '#construction') {
+            switchView('construction');
+        } else {
+            switchView('portal');
+        }
     }
 });

@@ -17,7 +17,32 @@
     <div class="ambient-glow glow-2"></div>
     <div class="ambient-glow glow-3"></div>
 
-    <div class="app-container">
+    <!-- View 1: Portal Home Launcher (Blank Page with 2 Buttons) -->
+    <div id="portalHomeView" class="portal-view-container">
+        <div class="portal-actions-grid">
+            <button type="button" id="btnNavJapanese" class="portal-choice-btn portal-btn-jp">
+                <span>プロジェクト・ゼロ</span>
+            </button>
+            <button type="button" id="btnNavReminders" class="portal-choice-btn portal-btn-reminders">
+                <span>Reminders</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- View 2: Under Construction View for Japanese Button -->
+    <div id="constructionView" class="construction-view-container hidden">
+        <div class="construction-card">
+            <div class="construction-icon">🚧</div>
+            <h2 class="construction-title">Page Under Construction</h2>
+            <p class="construction-subtitle">This page is currently being built. Check back soon!</p>
+            <button type="button" id="btnBackFromConstruction" class="btn btn-secondary btn-back-portal-lg">
+                <span>← Back to Home</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- View 3: Main Reminders Dashboard View -->
+    <div id="remindersView" class="app-container hidden">
         <!-- Header -->
         <header class="app-header">
             <div class="brand-row">
@@ -32,9 +57,14 @@
                     </div>
                 </div>
 
-                <button type="button" id="btnDeviceMenu" class="btn-menu-dots" title="WhatsApp Account & Settings" aria-label="WhatsApp Account & Settings">
-                    <span>⋮</span>
-                </button>
+                <div class="header-nav-actions">
+                    <button type="button" id="btnBackToPortalFromReminders" class="btn btn-sm btn-outline btn-back-portal" title="Back to Home Portal">
+                        <span>← Home</span>
+                    </button>
+                    <button type="button" id="btnDeviceMenu" class="btn-menu-dots" title="WhatsApp Account & Settings" aria-label="WhatsApp Account & Settings">
+                        <span>⋮</span>
+                    </button>
+                </div>
             </div>
 
             <div class="header-status-group">
