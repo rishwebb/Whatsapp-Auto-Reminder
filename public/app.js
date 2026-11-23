@@ -1325,7 +1325,11 @@ btnLockDashboard?.addEventListener('click', async () => {
     }
 });
 
-// Mobile Accordion Dropdowns for Reminders and History (Mobile Only)
+// Mobile Accordion Dropdowns for Schedule, Reminders and History (Mobile Only)
+const scheduleCard = document.getElementById('scheduleCard');
+const scheduleCardHeader = document.getElementById('scheduleCardHeader');
+const btnToggleScheduleCollapse = document.getElementById('btnToggleScheduleCollapse');
+
 const remindersListCard = document.getElementById('remindersListCard');
 const remindersListCardHeader = document.getElementById('remindersListCardHeader');
 const btnToggleRemindersCollapse = document.getElementById('btnToggleRemindersCollapse');
@@ -1333,6 +1337,14 @@ const btnToggleRemindersCollapse = document.getElementById('btnToggleRemindersCo
 const historyCard = document.getElementById('historyCard');
 const historyCardHeader = document.getElementById('historyCardHeader');
 const btnToggleHistoryCollapse = document.getElementById('btnToggleHistoryCollapse');
+
+function toggleScheduleCollapse(e) {
+    if (window.innerWidth > 768) return; // Desktop remains full view
+    if (e && e.target && e.target.closest('#btnRerollPlan')) return;
+    if (scheduleCard) {
+        scheduleCard.classList.toggle('is-collapsed');
+    }
+}
 
 function toggleRemindersCollapse(e) {
     if (window.innerWidth > 768) return; // Desktop remains full view
@@ -1348,6 +1360,12 @@ function toggleHistoryCollapse(e) {
         historyCard.classList.toggle('is-collapsed');
     }
 }
+
+scheduleCardHeader?.addEventListener('click', toggleScheduleCollapse);
+btnToggleScheduleCollapse?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleScheduleCollapse();
+});
 
 remindersListCardHeader?.addEventListener('click', toggleRemindersCollapse);
 btnToggleRemindersCollapse?.addEventListener('click', (e) => {
