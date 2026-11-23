@@ -20,15 +20,21 @@
     <div class="app-container">
         <!-- Header -->
         <header class="app-header">
-            <div class="brand">
-                <div class="brand-icon">
-                    <span>💊</span>
-                    <div class="pulse-ring"></div>
+            <div class="brand-row">
+                <div class="brand">
+                    <div class="brand-icon">
+                        <span>💊</span>
+                        <div class="pulse-ring"></div>
+                    </div>
+                    <div>
+                        <h1 class="brand-title">PillPulse <span class="badge-sub">Autonomous WA</span></h1>
+                        <p class="brand-subtitle">Dynamic Windows • Random Text Variations • Multi-Contact Routines</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 class="brand-title">PillPulse <span class="badge-sub">Autonomous WA</span></h1>
-                    <p class="brand-subtitle">Dynamic Windows • Random Text Variations • Multi-Contact Routines</p>
-                </div>
+
+                <button type="button" id="btnDeviceMenu" class="btn-menu-dots" title="WhatsApp Account & Settings" aria-label="WhatsApp Account & Settings">
+                    <span>⋮</span>
+                </button>
             </div>
 
             <div class="header-status-group">
@@ -43,14 +49,10 @@
                     <span id="cloudStatusText">Connecting Cloud...</span>
                 </div>
 
-                <div class="status-pill wa-pill" id="waStatusPill">
+                <div class="status-pill wa-pill" id="waStatusPill" title="Click to view WhatsApp account details">
                     <span class="indicator-dot" id="waDot"></span>
                     <span id="waStatusText">Checking WA...</span>
                 </div>
-
-                <button id="btnLockDashboard" class="btn btn-sm btn-outline btn-lock-dashboard hidden" title="Lock Dashboard">
-                    <span>🔒 Lock</span>
-                </button>
 
                 <button id="btnOpenNewModal" class="btn btn-primary btn-add-reminder">
                     <span>+ New Reminder</span>
@@ -245,6 +247,60 @@
                 </div>
             </section>
         </main>
+    </div>
+
+    <!-- Modal: WhatsApp Device & Session Manager -->
+    <div id="deviceModal" class="modal-backdrop hidden">
+        <div class="modal-card modal-card-compact">
+            <div class="modal-header">
+                <div class="card-title-group">
+                    <span class="card-icon">📱</span>
+                    <h2>WhatsApp Account</h2>
+                </div>
+                <button type="button" id="btnCloseDeviceModal" class="btn-close" aria-label="Close">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <div id="modalWaConnectedSection">
+                    <div class="connected-badge">
+                        <div class="connected-avatar">✓</div>
+                        <div class="connected-info">
+                            <h3 id="modalConnectedName">WhatsApp Connected</h3>
+                            <p id="modalConnectedPhone" class="mono-text">+00 00000 00000</p>
+                        </div>
+                    </div>
+
+                    <div class="stealth-shield mb-3">
+                        <span class="shield-icon">🛡️</span>
+                        <div>
+                            <strong>Permanent Stealth Shield Active</strong>
+                            <p>Offline presence enforced so you never show as "Online 24/7".</p>
+                        </div>
+                    </div>
+
+                    <div class="danger-zone">
+                        <div class="danger-zone-title">
+                            <span>⚠️ Session Safety</span>
+                        </div>
+                        <p class="danger-zone-desc">Unpairing will log out your active session and require scanning the QR code again.</p>
+                        <button type="button" id="btnModalUnpair" class="btn btn-outline-danger w-full">
+                            <span>Unpair WhatsApp Account</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="modalWaDisconnectedSection" class="hidden">
+                    <p class="text-sm text-muted text-center mb-3">WhatsApp is currently not paired with this dispatcher.</p>
+                    <button type="button" id="btnModalGoToQr" class="btn btn-primary w-full">
+                        <span>Scan QR Code to Connect</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" id="btnCloseDeviceModalFooter" class="btn btn-secondary w-full">Close</button>
+            </div>
+        </div>
     </div>
 
     <!-- Modal: Add / Edit Reminder -->

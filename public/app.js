@@ -98,6 +98,19 @@ const waConnectedView = document.getElementById('waConnectedView');
 const connectedName = document.getElementById('connectedName');
 const connectedPhone = document.getElementById('connectedPhone');
 const btnUnpair = document.getElementById('btnUnpair');
+const deviceCard = document.getElementById('deviceCard');
+
+// WhatsApp Device Modal Elements
+const deviceModal = document.getElementById('deviceModal');
+const btnDeviceMenu = document.getElementById('btnDeviceMenu');
+const btnCloseDeviceModal = document.getElementById('btnCloseDeviceModal');
+const btnCloseDeviceModalFooter = document.getElementById('btnCloseDeviceModalFooter');
+const btnModalUnpair = document.getElementById('btnModalUnpair');
+const modalConnectedName = document.getElementById('modalConnectedName');
+const modalConnectedPhone = document.getElementById('modalConnectedPhone');
+const modalWaConnectedSection = document.getElementById('modalWaConnectedSection');
+const modalWaDisconnectedSection = document.getElementById('modalWaDisconnectedSection');
+const btnModalGoToQr = document.getElementById('btnModalGoToQr');
 
 const selTimezone = document.getElementById('selTimezone');
 const chkCatchUp = document.getElementById('chkCatchUp');
@@ -212,10 +225,18 @@ function renderDeviceState() {
         waConnectedView.classList.remove('hidden');
         btnUnpair.classList.remove('hidden');
 
+        // Hide WhatsApp card from main feed to prevent mistouches and clutter
+        if (deviceCard) deviceCard.classList.add('hidden');
+
         const u = appState.connectedUser;
         const phone = u?.id ? u.id.split(':')[0] : 'Linked User';
         connectedPhone.textContent = `+${phone}`;
         connectedName.textContent = u?.name ? `${u.name}'s Account` : 'Active WhatsApp Session';
+
+        if (modalConnectedPhone) modalConnectedPhone.textContent = `+${phone}`;
+        if (modalConnectedName) modalConnectedName.textContent = u?.name ? `${u.name}'s Account` : 'Active WhatsApp Session';
+        if (modalWaConnectedSection) modalWaConnectedSection.classList.remove('hidden');
+        if (modalWaDisconnectedSection) modalWaDisconnectedSection.classList.add('hidden');
     } else if (state === 'QR_READY' && appState.currentQR) {
         waDot.classList.add('dot-amber');
         waStatusText.textContent = 'Scan QR Code';
@@ -225,7 +246,13 @@ function renderDeviceState() {
         waQrView.classList.remove('hidden');
         btnUnpair.classList.add('hidden');
 
+        // Show device card on dashboard so user can scan QR
+        if (deviceCard) deviceCard.classList.remove('hidden');
+
         qrImage.src = appState.currentQR;
+
+        if (modalWaConnectedSection) modalWaConnectedSection.classList.add('hidden');
+        if (modalWaDisconnectedSection) modalWaDisconnectedSection.classList.remove('hidden');
     } else {
         waDot.classList.add('dot-red');
         waStatusText.textContent = state === 'CONNECTING' ? 'Connecting...' : 'Disconnected';
@@ -234,6 +261,12 @@ function renderDeviceState() {
         waConnectedView.classList.add('hidden');
         waConnectingView.classList.remove('hidden');
         btnUnpair.classList.add('hidden');
+
+        // Show device card on dashboard while connecting
+        if (deviceCard) deviceCard.classList.remove('hidden');
+
+        if (modalWaConnectedSection) modalWaConnectedSection.classList.add('hidden');
+        if (modalWaDisconnectedSection) modalWaDisconnectedSection.classList.remove('hidden');
     }
 
     cloudDot.className = 'indicator-dot';
@@ -1006,18 +1039,25 @@ btnRerollPlan.addEventListener('click', async () => {
 });
 
 // Unpair WhatsApp Device
-btnUnpair.addEventListener('click', async () => {
+async function handleUnpair() {
     const confirmLogout = confirm('Are you sure you want to unpair this WhatsApp account?');
     if (!confirmLogout) return;
 
-    btnUnpair.disabled = true;
-    btnUnpair.textContent = 'Unpairing...';
+    if (btnUnpair) {
+        btnUnpair.disabled = true;
+        btnUnpair.textContent = 'Unpairing...';
+    }
+    if (btnModalUnpair) {
+        btnModalUnpair.disabled = true;
+        btnModalUnpair.textContent = 'Unpairing...';
+    }
 
     try {
         const res = await authFetch('/api/logout', { method: 'POST' });
         const data = await res.json();
         if (data.success) {
             showToast('Device unpaired. Loading fresh QR...', 'info');
+            closeDeviceModal();
         } else {
             showToast(data.error || 'Failed to unpair device', 'error');
         }
@@ -1026,10 +1066,42 @@ btnUnpair.addEventListener('click', async () => {
             showToast(err.message, 'error');
         }
     } finally {
-        btnUnpair.disabled = false;
-        btnUnpair.textContent = 'Unpair';
+        if (btnUnpair) {
+            btnUnpair.disabled = false;
+            btnUnpair.textContent = 'Unpair';
+        }
+        if (btnModalUnpair) {
+            btnModalUnpair.disabled = false;
+            btnModalUnpair.textContent = 'Unpair WhatsApp Account';
+        }
+    }
+}
+
+function openDeviceModal() {
+    if (deviceModal) deviceModal.classList.remove('hidden');
+}
+
+function closeDeviceModal() {
+    if (deviceModal) deviceModal.classList.add('hidden');
+}
+
+btnDeviceMenu?.addEventListener('click', openDeviceModal);
+waStatusPill?.addEventListener('click', openDeviceModal);
+btnCloseDeviceModal?.addEventListener('click', closeDeviceModal);
+btnCloseDeviceModalFooter?.addEventListener('click', closeDeviceModal);
+deviceModal?.addEventListener('click', (e) => {
+    if (e.target === deviceModal) closeDeviceModal();
+});
+btnModalGoToQr?.addEventListener('click', () => {
+    closeDeviceModal();
+    if (deviceCard) {
+        deviceCard.classList.remove('hidden');
+        deviceCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 });
+
+btnUnpair?.addEventListener('click', handleUnpair);
+btnModalUnpair?.addEventListener('click', handleUnpair);
 
 // Toggle Delivery History View More / View Less
 btnToggleHistory?.addEventListener('click', () => {
