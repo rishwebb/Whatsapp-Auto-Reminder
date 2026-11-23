@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#07090e">
+    <meta name="theme-color" content="#f4f6fa">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>PillPulse — Autonomous WhatsApp Multi-Target Reminder</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -459,26 +459,21 @@
         <div class="login-card glass-card">
             <div class="login-badge-icon">
                 <span class="lock-emoji">🔒</span>
-                <div class="pulse-ring"></div>
             </div>
-            <h2 class="login-title">Dashboard Protected</h2>
-            <p class="login-subtitle">An active WhatsApp session is paired with this dispatcher. Enter your password to access the control panel.</p>
+            <h2 class="login-title">Enter your password</h2>
 
             <form id="loginForm" class="login-form">
                 <div class="login-input-group">
-                    <input type="password" id="loginPasswordInput" placeholder="Enter dashboard password" required autocomplete="current-password" autofocus>
+                    <input type="password" id="loginPasswordInput" placeholder="Enter password" required autocomplete="current-password" autofocus>
                     <button type="button" id="btnTogglePasswordVis" class="btn-toggle-eye" aria-label="Toggle password visibility">👁️</button>
                 </div>
                 <div id="loginErrorMsg" class="login-error-msg hidden">
                     <span>⚠️</span> <span id="loginErrorText">Incorrect password. Please try again.</span>
                 </div>
                 <button type="submit" id="btnLoginSubmit" class="btn btn-primary w-full btn-unlock">
-                    <span>Unlock Dashboard 🚀</span>
+                    <span>Continue</span>
                 </button>
             </form>
-            <div class="login-footer">
-                <span>🛡️ PillPulse Autonomous Baileys Engine</span>
-            </div>
         </div>
     </div>
 
