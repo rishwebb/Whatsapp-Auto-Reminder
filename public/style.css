@@ -323,18 +323,32 @@ body {
 }
 
 .btn-back-portal {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     font-size: 0.82rem;
-    padding: 8px 14px;
-    border-radius: var(--radius-sm);
+    padding: 7px 13px 7px 8px;
+    border-radius: var(--radius-full, 9999px);
     background: rgba(0, 0, 0, 0.04);
     border: 1px solid rgba(0, 0, 0, 0.08);
     color: var(--text-main);
     font-weight: 600;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-back-portal:hover {
     background: rgba(0, 0, 0, 0.08);
     color: var(--primary);
+}
+
+.btn-back-portal:hover .btn-back-svg {
+    transform: translateX(-2px);
+}
+
+.btn-back-svg {
+    stroke-width: 2.6;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
 }
 
 .brand {
@@ -1747,16 +1761,6 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, in
         padding: 14px 16px;
     }
 
-    #scheduleCard .card-header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-    }
-
-    #scheduleCard .card-title-group {
-        width: 100%;
-    }
-
     #btnRerollPlan {
         width: 100%;
         justify-content: center;
@@ -2502,27 +2506,42 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, in
         transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
+    /* Unified Collapsible Card Header on Mobile (Collapsed State) */
+    .collapsible-card.is-collapsed .card-header {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-wrap: nowrap !important;
+        gap: 12px !important;
+    }
+
+    .collapsible-card.is-collapsed .card-title-group {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        width: auto !important;
+        margin-right: 12px !important;
+    }
+
+    .collapsible-card.is-collapsed .card-header-actions {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: 8px !important;
+        margin-left: auto !important;
+        flex-shrink: 0 !important;
+    }
+
     /* Today's Timetable Schedule Card Header on Mobile */
-    #scheduleCard .card-header {
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-    }
-
-    #scheduleCard.is-collapsed .card-header {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-    }
-
     #scheduleCard.is-collapsed #btnRerollPlan {
         display: none !important;
     }
 
     #scheduleCard:not(.is-collapsed) .card-header {
+        display: flex;
         flex-direction: column;
         align-items: stretch;
+        gap: 10px;
     }
 
     #scheduleCard:not(.is-collapsed) .card-header-actions {
@@ -2539,26 +2558,15 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, in
     }
 
     /* Reminders Card Header on Mobile */
-    #remindersListCard .card-header {
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-    }
-
-    #remindersListCard.is-collapsed .card-header {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-    }
-
     #remindersListCard.is-collapsed .filter-pills {
         display: none !important;
     }
 
     #remindersListCard:not(.is-collapsed) .card-header {
+        display: flex;
         flex-direction: column;
         align-items: stretch;
+        gap: 10px;
     }
 
     #remindersListCard:not(.is-collapsed) .card-header-actions {
@@ -2574,7 +2582,7 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, in
     }
 
     /* History Card Header on Mobile */
-    #historyCard .card-header {
+    #historyCard:not(.is-collapsed) .card-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
