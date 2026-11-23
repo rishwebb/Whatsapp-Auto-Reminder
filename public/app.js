@@ -211,11 +211,14 @@ const btnCancelModal = document.getElementById('btnCancelModal');
 function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
-    let icon = 'ℹ️';
-    if (type === 'success') icon = '✅';
-    if (type === 'error') icon = '❌';
+    let iconSvg = `<svg class="icon-svg toast-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+    if (type === 'success') {
+        iconSvg = `<svg class="icon-svg toast-svg text-success" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    } else if (type === 'error') {
+        iconSvg = `<svg class="icon-svg toast-svg text-danger" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+    }
 
-    toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+    toast.innerHTML = `<span class="toast-icon-wrap">${iconSvg}</span><span>${message}</span>`;
     toastContainer.appendChild(toast);
 
     setTimeout(() => {
@@ -424,7 +427,13 @@ function renderRemindersList() {
                 pillsHtml += `
                     <div class="slot-summary-pill">
                         <strong>${s.name}:</strong> ${formatTime12h(s.startTime)} - ${formatTime12h(s.endTime)} (${span})
-                        <span class="variations-badge">${varCount} var 🎲</span>
+                        <span class="variations-badge">
+                            <svg class="icon-svg" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                                <path d="M16 8h.01"/><path d="M8 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/><path d="M12 12h.01"/>
+                            </svg>
+                            ${varCount} var
+                        </span>
                     </div>
                 `;
             });
@@ -440,10 +449,26 @@ function renderRemindersList() {
             bodyHtml = `
                 <div class="one-time-summary">
                     <div class="flex items-center gap-3">
-                        <span class="one-time-time-tag">📅 ${ot.date || 'Today'} at ${formatTime12h(ot.time || '00:00')}</span>
-                        <span class="variations-badge">${varCount} variation(s) 🎲</span>
+                        <span class="one-time-time-tag">
+                            <svg class="icon-svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                <line x1="3" y1="10" x2="21" y2="10"/>
+                            </svg>
+                            ${ot.date || 'Today'} at ${formatTime12h(ot.time || '00:00')}
+                        </span>
+                        <span class="variations-badge">
+                            <svg class="icon-svg" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                                <path d="M16 8h.01"/><path d="M8 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/><path d="M12 12h.01"/>
+                            </svg>
+                            ${varCount} variation(s)
+                        </span>
                         <span class="slot-status-badge ${isDelivered ? 'status-badge-delivered' : 'status-badge-pending'}">
-                            ${isDelivered ? '✓ Delivered' : '⏳ Scheduled'}
+                            ${isDelivered 
+                                ? `<svg class="icon-svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Delivered`
+                                : `<svg class="icon-svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Scheduled`}
                         </span>
                     </div>
                     <div class="reminder-content-box mt-2">
@@ -457,7 +482,9 @@ function renderRemindersList() {
             <div class="reminder-top-row">
                 <div class="reminder-meta-group">
                     <span class="type-tag ${isContinuous ? 'continuous' : 'one_time'}">
-                        ${isContinuous ? '🔄 Daily Routine' : '🎯 One-Time'}
+                        ${isContinuous 
+                            ? `<svg class="icon-svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg> Daily Routine`
+                            : `<svg class="icon-svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> One-Time`}
                     </span>
                     <h3 class="reminder-title">${rem.title}</h3>
                 </div>
@@ -482,13 +509,22 @@ function renderRemindersList() {
 
                 <div class="flex items-center gap-2">
                     <button class="btn btn-sm btn-outline btn-test-reminder" data-id="${rem.id}">
-                        ⚡ Send Test
+                        <svg class="icon-svg btn-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                        </svg>
+                        <span>Send Test</span>
                     </button>
                     <button class="btn btn-sm btn-secondary btn-edit-reminder" data-id="${rem.id}">
-                        ✏️ Edit
+                        <svg class="icon-svg btn-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                        </svg>
+                        <span>Edit</span>
                     </button>
                     <button class="btn btn-sm btn-outline-danger btn-delete-reminder" data-id="${rem.id}">
-                        🗑️ Delete
+                        <svg class="icon-svg btn-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                        </svg>
+                        <span>Delete</span>
                     </button>
                 </div>
             </div>
@@ -530,11 +566,11 @@ function renderScheduleTimeline() {
 
         let statusBadge = '';
         if (isDelivered) {
-            statusBadge = `<span class="slot-status-badge status-badge-delivered">✓ Delivered at ${formatIsoToLocalTime(item.sentAt)}</span>`;
+            statusBadge = `<span class="slot-status-badge status-badge-delivered"><svg class="icon-svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Delivered at ${formatIsoToLocalTime(item.sentAt)}</span>`;
         } else if (isPending) {
-            statusBadge = `<span class="slot-status-badge status-badge-pending">⏳ Scheduled</span>`;
+            statusBadge = `<span class="slot-status-badge status-badge-pending"><svg class="icon-svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Scheduled</span>`;
         } else {
-            statusBadge = `<span class="slot-status-badge status-badge-disabled">⚪ Disabled</span>`;
+            statusBadge = `<span class="slot-status-badge status-badge-disabled">Disabled</span>`;
         }
 
         const isContinuous = item.type === 'continuous';
@@ -552,7 +588,13 @@ function renderScheduleTimeline() {
                         ${isContinuous ? 'Daily' : 'One-Time'}
                     </span>
                     <span class="slot-card-title">${item.reminderTitle} (${item.slotName})</span>
-                    <span class="variations-badge">${varCount} var 🎲</span>
+                    <span class="variations-badge">
+                        <svg class="icon-svg" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                            <path d="M16 8h.01"/><path d="M8 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/><path d="M12 12h.01"/>
+                        </svg>
+                        ${varCount} var
+                    </span>
                 </div>
                 <span class="slot-card-sub">To: +${item.phone} (${item.contactName}) • ${subLabel}</span>
             </div>
@@ -564,7 +606,11 @@ function renderScheduleTimeline() {
 
             <div class="flex items-center gap-2">
                 ${statusBadge}
-                <button class="btn btn-xs btn-outline btn-timeline-delete" data-id="${item.reminderId}" title="Delete Reminder">🗑️</button>
+                <button class="btn btn-xs btn-outline btn-timeline-delete" data-id="${item.reminderId}" title="Delete Reminder">
+                    <svg class="icon-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                    </svg>
+                </button>
             </div>
         `;
 
@@ -581,6 +627,9 @@ function renderScheduleTimeline() {
 // -------------------------------------------------------------
 let isHistoryExpanded = false;
 const HISTORY_INITIAL_LIMIT = 5;
+
+const CHEVRON_UP_SVG = `<svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>`;
+const CHEVRON_DOWN_SVG = `<svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
 
 function renderHistory() {
     const history = appState.scheduler?.history || [];
@@ -603,11 +652,11 @@ function renderHistory() {
             historyFooter.style.display = 'flex';
             if (isHistoryExpanded) {
                 if (toggleHistoryText) toggleHistoryText.textContent = 'View Less';
-                if (toggleHistoryIcon) toggleHistoryIcon.textContent = '▲';
+                if (toggleHistoryIcon) toggleHistoryIcon.innerHTML = CHEVRON_UP_SVG;
             } else {
                 const remaining = history.length - HISTORY_INITIAL_LIMIT;
                 if (toggleHistoryText) toggleHistoryText.textContent = `View More (${remaining} more)`;
-                if (toggleHistoryIcon) toggleHistoryIcon.textContent = '▼';
+                if (toggleHistoryIcon) toggleHistoryIcon.innerHTML = CHEVRON_DOWN_SVG;
             }
         }
     }
@@ -634,7 +683,12 @@ function renderHistory() {
                 ${item.variationInfo ? `<span style="font-size: 0.68rem; color: var(--accent-purple);">${item.variationInfo}</span>` : ''}
             </td>
             <td>
-                <span style="color: #34d399; font-weight: 700; font-size: 0.76rem;">✓ Delivered</span>
+                <span style="color: #34d399; font-weight: 700; font-size: 0.76rem; display: inline-flex; align-items: center; gap: 4px;">
+                    <svg class="icon-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    <span>Delivered</span>
+                </span>
             </td>
         `;
         historyTableBody.appendChild(tr);
@@ -656,18 +710,20 @@ function createSlotCardElement(slotData = null) {
 
     const messages = Array.isArray(slotData?.messages) && slotData.messages.length > 0
         ? slotData.messages
-        : (slotData?.message ? [slotData.message] : ['Friendly reminder 💊']);
+        : (slotData?.message ? [slotData.message] : ['Friendly reminder']);
 
     const card = document.createElement('div');
     card.className = 'modal-slot-card';
     card.dataset.slotId = slotId;
+
+    const REMOVE_X_SVG = `<svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
 
     let variationsHtml = '';
     messages.forEach((msg, idx) => {
         variationsHtml += `
             <div class="variation-row">
                 <textarea class="slot-variation-msg" rows="2" placeholder="Reminder message variation...">${msg}</textarea>
-                <button type="button" class="btn-remove-variation" title="Delete variation" ${messages.length === 1 ? 'style="display:none;"' : ''}>✕</button>
+                <button type="button" class="btn-remove-variation" title="Delete variation" ${messages.length === 1 ? 'style="display:none;"' : ''}>${REMOVE_X_SVG}</button>
             </div>
         `;
     });
@@ -681,7 +737,10 @@ function createSlotCardElement(slotData = null) {
                 <input type="text" class="modal-slot-name" value="${slotName}" placeholder="Slot Name (e.g. Morning Medicine)" style="width: 200px; font-weight: 700;">
             </div>
             <button type="button" class="btn btn-sm btn-outline-danger btn-delete-slot">
-                🗑️ Remove Slot
+                <svg class="icon-svg btn-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                </svg>
+                <span>Remove Slot</span>
             </button>
         </div>
 
@@ -695,7 +754,7 @@ function createSlotCardElement(slotData = null) {
 
         <div>
             <div class="flex items-center justify-between mb-1">
-                <label class="mb-0 text-xs">Text Variations (Picks 1 at random each day) 🎲</label>
+                <label class="mb-0 text-xs">Text Variations (Picks 1 at random each day)</label>
                 <button type="button" class="btn btn-sm btn-outline btn-add-variation py-1">
                     + Add Variation
                 </button>
@@ -727,7 +786,7 @@ function createSlotCardElement(slotData = null) {
         row.className = 'variation-row';
         row.innerHTML = `
             <textarea class="slot-variation-msg" rows="2" placeholder="Another text variation..."></textarea>
-            <button type="button" class="btn-remove-variation" title="Delete variation">✕</button>
+            <button type="button" class="btn-remove-variation" title="Delete variation">${REMOVE_X_SVG}</button>
         `;
         row.querySelector('.btn-remove-variation').addEventListener('click', () => {
             row.remove();
@@ -762,7 +821,8 @@ function updateRemoveButtonsVisibility(container) {
 }
 
 function renderOneTimeMessagesUI(messages = null) {
-    const list = Array.isArray(messages) && messages.length > 0 ? messages : ['Happy Birthday!! 🎂🎉'];
+    const REMOVE_X_SVG = `<svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+    const list = Array.isArray(messages) && messages.length > 0 ? messages : ['Happy Birthday! Wishing you the most wonderful year ahead!'];
     modalOneTimeMessagesContainer.innerHTML = '';
 
     list.forEach(msg => {
@@ -770,7 +830,7 @@ function renderOneTimeMessagesUI(messages = null) {
         row.className = 'variation-row';
         row.innerHTML = `
             <textarea class="ot-variation-msg" rows="2" placeholder="One-time message variation...">${msg}</textarea>
-            <button type="button" class="btn-remove-variation" title="Delete variation" ${list.length === 1 ? 'style="display:none;"' : ''}>✕</button>
+            <button type="button" class="btn-remove-variation" title="Delete variation" ${list.length === 1 ? 'style="display:none;"' : ''}>${REMOVE_X_SVG}</button>
         `;
         row.querySelector('.btn-remove-variation').addEventListener('click', () => {
             row.remove();
@@ -781,11 +841,12 @@ function renderOneTimeMessagesUI(messages = null) {
 }
 
 btnAddOneTimeVariation.addEventListener('click', () => {
+    const REMOVE_X_SVG = `<svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
     const row = document.createElement('div');
     row.className = 'variation-row';
     row.innerHTML = `
         <textarea class="ot-variation-msg" rows="2" placeholder="Another message version..."></textarea>
-        <button type="button" class="btn-remove-variation" title="Delete variation">✕</button>
+        <button type="button" class="btn-remove-variation" title="Delete variation">${REMOVE_X_SVG}</button>
     `;
     row.querySelector('.btn-remove-variation').addEventListener('click', () => {
         row.remove();
@@ -829,9 +890,9 @@ function openCreateModal() {
 
     // Default 3 dynamic slots
     const defaults = [
-        { id: 1, name: 'Morning Medicine', startTime: '08:00', endTime: '09:00', messages: ['Good morning! Time for your morning medicines 💊 Have a great day!', 'Morning! Quick reminder to take your meds and drink water 💧'] },
-        { id: 2, name: 'Afternoon Medicine', startTime: '13:00', endTime: '14:00', messages: ['Afternoon reminder! Please remember your afternoon medicines 💧 Stay hydrated!', 'Hey! Don\'t forget your afternoon pills 💊'] },
-        { id: 3, name: 'Night Medicine', startTime: '20:00', endTime: '21:00', messages: ['Good evening! Don\'t forget your night medicines before bed 🌙 Sleep well!', 'Night reminder! Time for your evening meds 💊 Sweet dreams!'] }
+        { id: 1, name: 'Morning Medicine', startTime: '08:00', endTime: '09:00', messages: ['Good morning! Time for your morning medicines. Have a great day!', 'Morning! Quick reminder to take your meds and drink water.'] },
+        { id: 2, name: 'Afternoon Medicine', startTime: '13:00', endTime: '14:00', messages: ['Afternoon reminder! Please remember your afternoon medicines. Stay hydrated!', 'Hey! Don\'t forget your afternoon pills.'] },
+        { id: 3, name: 'Night Medicine', startTime: '20:00', endTime: '21:00', messages: ['Good evening! Don\'t forget your night medicines before bed. Sleep well!', 'Night reminder! Time for your evening meds. Sweet dreams!'] }
     ];
 
     defaults.forEach(d => modalSlotsContainer.appendChild(createSlotCardElement(d)));
@@ -839,7 +900,7 @@ function openCreateModal() {
     const today = new Date().toISOString().split('T')[0];
     inputOneTimeDate.value = today;
     inputOneTimeTime.value = '00:00';
-    renderOneTimeMessagesUI(['Happy Birthday!! 🎂🎉 Wishing you the most wonderful year ahead!']);
+    renderOneTimeMessagesUI(['Happy Birthday! Wishing you the most wonderful year ahead!']);
 
     reminderModal.classList.remove('hidden');
 }
@@ -925,7 +986,7 @@ reminderForm.addEventListener('submit', async (e) => {
                 name,
                 startTime,
                 endTime,
-                messages: messages.length > 0 ? messages : ['Friendly reminder 💊'],
+                messages: messages.length > 0 ? messages : ['Friendly reminder'],
                 enabled
             };
         });
@@ -936,7 +997,7 @@ reminderForm.addEventListener('submit', async (e) => {
         payload.oneTime = {
             date: inputOneTimeDate.value,
             time: inputOneTimeTime.value,
-            messages: messages.length > 0 ? messages : ['Happy Birthday! 🎂']
+            messages: messages.length > 0 ? messages : ['Happy Birthday! Wishing you the most wonderful year ahead!']
         };
     }
 
@@ -952,9 +1013,10 @@ reminderForm.addEventListener('submit', async (e) => {
         const data = await res.json();
 
         if (data.success) {
-            showToast(`Reminder "${payload.title}" saved! 🎉`, 'success');
+            showToast(`Reminder "${payload.title}" saved!`, 'success');
             appState.config = data.config;
             renderRemindersList();
+            if (remindersListCard) remindersListCard.classList.remove('is-collapsed');
             closeModal();
             fetchStatus();
         } else {
@@ -980,7 +1042,7 @@ async function handleDeleteReminder(reminderId) {
         const res = await authFetch(`/api/reminders/${reminderId}`, { method: 'DELETE' });
         const data = await res.json();
         if (data.success) {
-            showToast('Reminder deleted successfully! 🗑️', 'info');
+            showToast('Reminder deleted successfully!', 'info');
             appState.config = data.config;
             renderRemindersList();
             fetchStatus();
@@ -996,12 +1058,12 @@ async function handleDeleteReminder(reminderId) {
 
 // Test Reminder Handler
 async function handleTestReminder(reminderId) {
-    showToast('Simulating typing & sending test to WhatsApp... ⏳', 'info');
+    showToast('Simulating typing & sending test to WhatsApp...', 'info');
     try {
         const res = await authFetch(`/api/reminders/${reminderId}/test`, { method: 'POST' });
         const data = await res.json();
         if (data.success) {
-            showToast('Test reminder delivered to recipient WhatsApp! 🚀', 'success');
+            showToast('Test reminder delivered to recipient WhatsApp!', 'success');
             fetchStatus();
         } else {
             showToast(data.error || 'Failed sending test reminder', 'error');
@@ -1020,6 +1082,7 @@ document.querySelectorAll('.filter-pills .pill').forEach(pill => {
         e.currentTarget.classList.add('active');
         activeFilter = e.currentTarget.dataset.filter;
         renderRemindersList();
+        if (remindersListCard) remindersListCard.classList.remove('is-collapsed');
     });
 });
 
@@ -1044,7 +1107,7 @@ globalSettingsForm.addEventListener('submit', async (e) => {
         });
         const data = await res.json();
         if (data.success) {
-            showToast('System settings updated! ⚙️', 'success');
+            showToast('System settings updated!', 'success');
             appState.config = data.config;
             startClock();
         } else {
@@ -1067,7 +1130,7 @@ btnRerollPlan.addEventListener('click', async () => {
         const res = await authFetch('/api/regenerate-plan', { method: 'POST' });
         const data = await res.json();
         if (data.success) {
-            showToast('Re-rolled today\'s random minutes! 🎲', 'success');
+            showToast('Re-rolled today\'s random minutes!', 'success');
             if (appState.scheduler) appState.scheduler.dailyPlan = data.dailyPlan;
             renderScheduleTimeline();
         } else {
@@ -1200,7 +1263,7 @@ loginForm?.addEventListener('submit', async (e) => {
     if (!password) return;
 
     btnLoginSubmit.disabled = true;
-    btnLoginSubmit.innerHTML = '<span>Verifying... ⏳</span>';
+    btnLoginSubmit.innerHTML = '<span>Verifying...</span>';
     loginErrorMsg.classList.add('hidden');
 
     try {
@@ -1217,7 +1280,7 @@ loginForm?.addEventListener('submit', async (e) => {
             }
             appState.hasPasswordSet = true;
             hideLockScreen();
-            showToast('Dashboard unlocked! 🚀', 'success');
+            showToast('Dashboard unlocked!', 'success');
             connectSSE();
             fetchStatus();
         } else {
@@ -1234,18 +1297,21 @@ loginForm?.addEventListener('submit', async (e) => {
         loginErrorMsg.classList.remove('hidden');
     } finally {
         btnLoginSubmit.disabled = false;
-        btnLoginSubmit.innerHTML = '<span>Unlock Dashboard 🚀</span>';
+        btnLoginSubmit.innerHTML = '<span>Continue</span>';
     }
 });
+
+const EYE_SVG_ICON = `<svg class="icon-svg eye-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`;
+const EYE_OFF_SVG_ICON = `<svg class="icon-svg eye-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>`;
 
 btnTogglePasswordVis?.addEventListener('click', () => {
     if (!loginPasswordInput) return;
     if (loginPasswordInput.type === 'password') {
         loginPasswordInput.type = 'text';
-        btnTogglePasswordVis.textContent = '🙈';
+        btnTogglePasswordVis.innerHTML = EYE_OFF_SVG_ICON;
     } else {
         loginPasswordInput.type = 'password';
-        btnTogglePasswordVis.textContent = '👁️';
+        btnTogglePasswordVis.innerHTML = EYE_SVG_ICON;
     }
 });
 
@@ -1255,8 +1321,44 @@ btnLockDashboard?.addEventListener('click', async () => {
     } finally {
         setAuthToken('');
         showLockScreen();
-        showToast('Dashboard locked 🔒', 'info');
+        showToast('Dashboard locked', 'info');
     }
+});
+
+// Mobile Accordion Dropdowns for Reminders and History (Mobile Only)
+const remindersListCard = document.getElementById('remindersListCard');
+const remindersListCardHeader = document.getElementById('remindersListCardHeader');
+const btnToggleRemindersCollapse = document.getElementById('btnToggleRemindersCollapse');
+
+const historyCard = document.getElementById('historyCard');
+const historyCardHeader = document.getElementById('historyCardHeader');
+const btnToggleHistoryCollapse = document.getElementById('btnToggleHistoryCollapse');
+
+function toggleRemindersCollapse(e) {
+    if (window.innerWidth > 768) return; // Desktop remains full view
+    if (e && e.target && e.target.closest('.filter-pills')) return;
+    if (remindersListCard) {
+        remindersListCard.classList.toggle('is-collapsed');
+    }
+}
+
+function toggleHistoryCollapse(e) {
+    if (window.innerWidth > 768) return; // Desktop remains full view
+    if (historyCard) {
+        historyCard.classList.toggle('is-collapsed');
+    }
+}
+
+remindersListCardHeader?.addEventListener('click', toggleRemindersCollapse);
+btnToggleRemindersCollapse?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleRemindersCollapse();
+});
+
+historyCardHeader?.addEventListener('click', toggleHistoryCollapse);
+btnToggleHistoryCollapse?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleHistoryCollapse();
 });
 
 // SSE Stream
@@ -1303,7 +1405,7 @@ function connectSSE() {
                 }
                 renderScheduleTimeline();
             } else if (type === 'REMINDER_SENT') {
-                showToast(`Reminder delivered to +${data.phone} (${data.reminderTitle})! 💊`, 'success');
+                showToast(`Reminder delivered to +${data.phone} (${data.reminderTitle})!`, 'success');
                 fetchStatus();
             }
         } catch (err) {

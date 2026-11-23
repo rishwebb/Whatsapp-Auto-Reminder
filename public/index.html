@@ -32,11 +32,15 @@
     <!-- View 2: Under Construction View for Japanese Button -->
     <div id="constructionView" class="construction-view-container hidden">
         <div class="construction-card">
-            <div class="construction-icon">🚧</div>
+            <div class="construction-icon">
+                <svg class="icon-svg construction-svg" viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                </svg>
+            </div>
             <h2 class="construction-title">Page Under Construction</h2>
             <p class="construction-subtitle">This page is currently being built. Check back soon!</p>
             <button type="button" id="btnBackFromConstruction" class="btn btn-secondary btn-back-portal-lg">
-                <span>← Back to Home</span>
+                <span>&larr; Back to Home</span>
             </button>
         </div>
     </div>
@@ -48,7 +52,10 @@
             <div class="brand-row">
                 <div class="brand">
                     <div class="brand-icon">
-                        <span>💊</span>
+                        <svg class="icon-svg brand-svg" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/>
+                            <path d="m8.5 8.5 7 7"/>
+                        </svg>
                         <div class="pulse-ring"></div>
                     </div>
                     <div>
@@ -106,7 +113,12 @@
                 <div class="glass-card" id="deviceCard">
                     <div class="card-header">
                         <div class="card-title-group">
-                            <span class="card-icon">📱</span>
+                            <span class="card-icon">
+                                <svg class="icon-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect width="14" height="20" x="5" y="2" rx="3" ry="3"/>
+                                    <path d="M12 18h.01"/>
+                                </svg>
+                            </span>
                             <h2>WhatsApp Account</h2>
                         </div>
                         <button id="btnUnpair" class="btn btn-sm btn-outline-danger hidden">Unpair</button>
@@ -132,14 +144,23 @@
 
                         <div id="waConnectedView" class="view-state hidden">
                             <div class="connected-badge">
-                                <div class="connected-avatar">✓</div>
+                                <div class="connected-avatar">
+                                    <svg class="icon-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                </div>
                                 <div class="connected-info">
                                     <h3 id="connectedName">WhatsApp Connected</h3>
                                     <p id="connectedPhone" class="mono-text">+00 00000 00000</p>
                                 </div>
                             </div>
                             <div class="stealth-shield">
-                                <span class="shield-icon">🛡️</span>
+                                <span class="shield-icon">
+                                    <svg class="icon-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                        <path d="m9 12 2 2 4-4"/>
+                                    </svg>
+                                </span>
                                 <div>
                                     <strong>Permanent Stealth Shield Active</strong>
                                     <p>Offline presence enforced so you never show as "Online 24/7".</p>
@@ -153,7 +174,12 @@
                 <div class="glass-card" id="systemSettingsCard">
                     <div class="card-header">
                         <div class="card-title-group">
-                            <span class="card-icon">⚙️</span>
+                            <span class="card-icon">
+                                <svg class="icon-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="3"/>
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                                </svg>
+                            </span>
                             <h2>System Settings</h2>
                         </div>
                     </div>
@@ -175,7 +201,7 @@
                             <div class="form-group">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="chkTyping" checked>
-                                    <span>Simulate Natural Typing Indicator (composing...) 💬</span>
+                                    <span>Simulate Natural Typing Indicator (composing...)</span>
                                 </label>
                             </div>
 
@@ -193,14 +219,29 @@
                     </div>
                 </div>
 
-                <!-- Delivery History Card -->
-                <div class="glass-card" id="historyCard">
-                    <div class="card-header">
+                <!-- Delivery History Card (Collapsible Dropdown on Mobile) -->
+                <div class="glass-card collapsible-card is-collapsed" id="historyCard">
+                    <div class="card-header card-header-clickable" id="historyCardHeader">
                         <div class="card-title-group">
-                            <span class="card-icon">📜</span>
+                            <span class="card-icon">
+                                <svg class="icon-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                    <line x1="16" y1="13" x2="8" y2="13"/>
+                                    <line x1="16" y1="17" x2="8" y2="17"/>
+                                    <polyline points="10 9 9 9 8 9"/>
+                                </svg>
+                            </span>
                             <h2>Delivery Logs</h2>
                         </div>
-                        <span class="badge-counter" id="historyCounter">0 Delivered</span>
+                        <div class="card-header-actions">
+                            <span class="badge-counter" id="historyCounter">0 Delivered</span>
+                            <button type="button" class="btn-accordion-toggle mobile-only" id="btnToggleHistoryCollapse" aria-label="Toggle Delivery Logs dropdown">
+                                <svg class="icon-svg accordion-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 12 15 18 9"/>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="card-body">
@@ -223,7 +264,11 @@
                         </div>
                         <div class="history-footer" id="historyFooter" style="display: none;">
                             <button id="btnToggleHistory" class="btn btn-outline btn-sm w-full" type="button">
-                                <span id="toggleHistoryIcon">▼</span>
+                                <span id="toggleHistoryIcon">
+                                    <svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="6 9 12 15 18 9"/>
+                                    </svg>
+                                </span>
                                 <span id="toggleHistoryText">View More</span>
                             </button>
                         </div>
@@ -237,14 +282,24 @@
                 <div class="glass-card" id="scheduleCard">
                     <div class="card-header">
                         <div class="card-title-group">
-                            <span class="card-icon">🎯</span>
+                            <span class="card-icon">
+                                <svg class="icon-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <circle cx="12" cy="12" r="6"/>
+                                    <circle cx="12" cy="12" r="2"/>
+                                </svg>
+                            </span>
                             <div>
                                 <h2>Today's Timetable</h2>
                                 <span class="card-meta" id="planDateBadge">Loading timetable...</span>
                             </div>
                         </div>
                         <button id="btnRerollPlan" class="btn btn-sm btn-outline" title="Re-randomize minutes for remaining slots today">
-                            <span>🎲 Re-roll Today's Times</span>
+                            <svg class="icon-svg btn-svg-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                                <path d="M16 8h.01"/><path d="M8 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/><path d="M12 12h.01"/>
+                            </svg>
+                            <span>Re-roll Today's Times</span>
                         </button>
                     </div>
 
@@ -255,17 +310,30 @@
                     </div>
                 </div>
 
-                <!-- Configured Reminders Header & Filter -->
-                <div class="glass-card" id="remindersListCard">
-                    <div class="card-header">
+                <!-- Configured Reminders Header & Filter (Collapsible Dropdown on Mobile) -->
+                <div class="glass-card collapsible-card is-collapsed" id="remindersListCard">
+                    <div class="card-header card-header-clickable" id="remindersListCardHeader">
                         <div class="card-title-group">
-                            <span class="card-icon">📋</span>
+                            <span class="card-icon">
+                                <svg class="icon-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>
+                                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                                    <path d="m9 14 2 2 4-4"/>
+                                </svg>
+                            </span>
                             <h2>Configured Reminders & Targets</h2>
                         </div>
-                        <div class="filter-pills">
-                            <button class="pill active" data-filter="all">All (<span id="countAll">0</span>)</button>
-                            <button class="pill" data-filter="continuous">Daily (<span id="countContinuous">0</span>)</button>
-                            <button class="pill" data-filter="one_time">One-Time (<span id="countOneTime">0</span>)</button>
+                        <div class="card-header-actions">
+                            <div class="filter-pills">
+                                <button class="pill active" data-filter="all">All (<span id="countAll">0</span>)</button>
+                                <button class="pill" data-filter="continuous">Daily (<span id="countContinuous">0</span>)</button>
+                                <button class="pill" data-filter="one_time">One-Time (<span id="countOneTime">0</span>)</button>
+                            </div>
+                            <button type="button" class="btn-accordion-toggle mobile-only" id="btnToggleRemindersCollapse" aria-label="Toggle Reminders list dropdown">
+                                <svg class="icon-svg accordion-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 12 15 18 9"/>
+                                </svg>
+                            </button>
                         </div>
                     </div>
 
@@ -284,7 +352,12 @@
         <div class="modal-card modal-card-compact">
             <div class="modal-header">
                 <div class="card-title-group">
-                    <span class="card-icon">📱</span>
+                    <span class="card-icon">
+                        <svg class="icon-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="14" height="20" x="5" y="2" rx="3" ry="3"/>
+                            <path d="M12 18h.01"/>
+                        </svg>
+                    </span>
                     <h2>WhatsApp Account</h2>
                 </div>
                 <button type="button" id="btnCloseDeviceModal" class="btn-close" aria-label="Close">&times;</button>
@@ -293,7 +366,11 @@
             <div class="modal-body">
                 <div id="modalWaConnectedSection">
                     <div class="connected-badge">
-                        <div class="connected-avatar">✓</div>
+                        <div class="connected-avatar">
+                            <svg class="icon-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </div>
                         <div class="connected-info">
                             <h3 id="modalConnectedName">WhatsApp Connected</h3>
                             <p id="modalConnectedPhone" class="mono-text">+00 00000 00000</p>
@@ -301,7 +378,12 @@
                     </div>
 
                     <div class="stealth-shield mb-3">
-                        <span class="shield-icon">🛡️</span>
+                        <span class="shield-icon">
+                            <svg class="icon-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                <path d="m9 12 2 2 4-4"/>
+                            </svg>
+                        </span>
                         <div>
                             <strong>Permanent Stealth Shield Active</strong>
                             <p>Offline presence enforced so you never show as "Online 24/7".</p>
@@ -310,7 +392,12 @@
 
                     <div class="danger-zone">
                         <div class="danger-zone-title">
-                            <span>⚠️ Session Safety</span>
+                            <svg class="icon-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                                <line x1="12" y1="9" x2="12" y2="13"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                            <span>Session Safety</span>
                         </div>
                         <p class="danger-zone-desc">Unpairing will log out your active session and require scanning the QR code again.</p>
                         <button type="button" id="btnModalUnpair" class="btn btn-outline-danger w-full">
@@ -379,7 +466,14 @@
                             <label class="type-card" id="typeCardContinuous">
                                 <input type="radio" name="reminderType" value="continuous" checked>
                                 <div class="type-card-content">
-                                    <span class="type-icon">🔄</span>
+                                    <span class="type-icon">
+                                        <svg class="icon-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="m17 2 4 4-4 4"/>
+                                            <path d="M3 11v-1a4 4 0 0 1 4-4h14"/>
+                                            <path d="m7 22-4-4 4-4"/>
+                                            <path d="M21 13v1a4 4 0 0 1-4 4H3"/>
+                                        </svg>
+                                    </span>
                                     <div>
                                         <strong>Continuous (Daily Routine)</strong>
                                         <p>Customizable slots & time windows with random text variations</p>
@@ -390,7 +484,13 @@
                             <label class="type-card" id="typeCardOneTime">
                                 <input type="radio" name="reminderType" value="one_time">
                                 <div class="type-card-content">
-                                    <span class="type-icon">🎯</span>
+                                    <span class="type-icon">
+                                        <svg class="icon-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <circle cx="12" cy="12" r="6"/>
+                                            <circle cx="12" cy="12" r="2"/>
+                                        </svg>
+                                    </span>
                                     <div>
                                         <strong>One-Time Auto Message</strong>
                                         <p>Exact date & time trigger (e.g. Midnight birthday wish at 00:00)</p>
@@ -454,21 +554,36 @@
         </div>
     </div>
 
-    <!-- 🔒 Lock Screen / Password Modal Overlay -->
+    <!-- Lock Screen / Password Modal Overlay -->
     <div id="loginOverlay" class="login-overlay hidden">
         <div class="login-card glass-card">
             <div class="login-badge-icon">
-                <span class="lock-emoji">🔒</span>
+                <span class="lock-emoji">
+                    <svg class="icon-svg" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                </span>
             </div>
             <h2 class="login-title">Enter your password</h2>
 
             <form id="loginForm" class="login-form">
                 <div class="login-input-group">
                     <input type="password" id="loginPasswordInput" placeholder="Enter password" required autocomplete="current-password" autofocus>
-                    <button type="button" id="btnTogglePasswordVis" class="btn-toggle-eye" aria-label="Toggle password visibility">👁️</button>
+                    <button type="button" id="btnTogglePasswordVis" class="btn-toggle-eye" aria-label="Toggle password visibility">
+                        <svg class="icon-svg eye-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
                 </div>
                 <div id="loginErrorMsg" class="login-error-msg hidden">
-                    <span>⚠️</span> <span id="loginErrorText">Incorrect password. Please try again.</span>
+                    <svg class="icon-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <span id="loginErrorText">Incorrect password. Please try again.</span>
                 </div>
                 <button type="submit" id="btnLoginSubmit" class="btn btn-primary w-full btn-unlock">
                     <span>Continue</span>

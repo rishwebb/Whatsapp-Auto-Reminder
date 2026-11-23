@@ -144,7 +144,7 @@ body {
 }
 
 /* ============================================================ */
-/* 🌌 PORTAL LAUNCHER (BLANK PAGE WITH 2 BUTTONS)              */
+/* PORTAL LAUNCHER (BLANK PAGE WITH 2 BUTTONS)                 */
 /* ============================================================ */
 .portal-view-container {
     min-height: 100vh;
@@ -226,7 +226,7 @@ body {
 }
 
 /* ============================================================ */
-/* 🚧 UNDER CONSTRUCTION VIEW                                  */
+/* UNDER CONSTRUCTION VIEW                                     */
 /* ============================================================ */
 .construction-view-container {
     min-height: 100vh;
@@ -292,7 +292,7 @@ body {
 }
 
 /* ============================================================ */
-/* 📱 APP HEADER (iOS FROSTED GLASS BAR)                        */
+/* APP HEADER (iOS FROSTED GLASS BAR)                           */
 /* ============================================================ */
 .app-header {
     display: flex;
@@ -1556,7 +1556,7 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, in
 .hidden { display: none !important; }
 
 /* ============================================================ */
-/* 📱 FLOATING ACTION BUTTON (MOBILE)                          */
+/* FLOATING ACTION BUTTON (MOBILE)                             */
 /* ============================================================ */
 .mobile-fab {
     display: none;
@@ -1590,7 +1590,7 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, in
 }
 
 /* ============================================================ */
-/* 📱 MOBILE RESPONSIVENESS BREAKPOINTS                         */
+/* MOBILE RESPONSIVENESS BREAKPOINTS                            */
 /* ============================================================ */
 
 /* Tablet & Smaller Laptops (<= 1024px) */
@@ -2217,7 +2217,7 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, in
 }
 
 /* ============================================================
-   🔒 Lock Screen & Authentication Overlay (iOS Minimalist)
+   Lock Screen & Authentication Overlay (iOS Minimalist)
    ============================================================ */
 .login-overlay {
     position: fixed;
@@ -2365,4 +2365,214 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, in
 
 .shake {
     animation: shake 0.4s ease-in-out;
+}
+
+/* ============================================================ */
+/* PREMIUM APPLE iOS SVG ICONS & ALIGNMENT                     */
+/* ============================================================ */
+.icon-svg {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    flex-shrink: 0;
+    transition: transform 0.2s ease, stroke 0.2s ease;
+}
+
+.brand-svg {
+    color: var(--primary);
+    stroke-width: 2.2;
+}
+
+.construction-svg {
+    color: #eab308;
+    filter: drop-shadow(0 4px 12px rgba(234, 179, 8, 0.3));
+}
+
+.btn-svg,
+.btn-svg-icon {
+    display: inline-block;
+    vertical-align: -2px;
+    margin-right: 5px;
+    stroke-width: 2.2;
+}
+
+.toast-icon-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.text-success {
+    color: var(--accent-emerald, #34c759);
+}
+
+.text-danger {
+    color: var(--accent-rose, #ff3b30);
+}
+
+.eye-svg {
+    stroke: currentColor;
+}
+
+.card-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ============================================================ */
+/* DESKTOP VIEW (>= 769px) - ALWAYS FULLY EXPANDED             */
+/* ============================================================ */
+@media (min-width: 769px) {
+    .mobile-only {
+        display: none !important;
+    }
+
+    .collapsible-card .card-body,
+    .collapsible-card.is-collapsed .card-body {
+        display: block !important;
+        max-height: none !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+        padding: 20px !important;
+        overflow: visible !important;
+    }
+
+    #remindersListCard.is-collapsed .filter-pills,
+    #remindersListCard .filter-pills {
+        display: flex !important;
+    }
+
+    .card-header-clickable {
+        cursor: default;
+    }
+}
+
+/* ============================================================ */
+/* MOBILE ACCORDION / DROPDOWN BEHAVIOR (<= 768px)              */
+/* ============================================================ */
+@media (max-width: 768px) {
+    .mobile-only {
+        display: inline-flex !important;
+    }
+
+    .card-header-clickable {
+        cursor: pointer;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        transition: background-color 0.15s ease;
+    }
+
+    .card-header-clickable:active {
+        background-color: rgba(0, 0, 0, 0.03);
+    }
+
+    .btn-accordion-toggle {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        min-height: 32px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        color: var(--text-main);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        padding: 0;
+        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease;
+        flex-shrink: 0;
+    }
+
+    .btn-accordion-toggle:active {
+        transform: scale(0.92);
+        background: rgba(0, 0, 0, 0.1);
+    }
+
+    .accordion-chevron {
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Reminders Card Header on Mobile */
+    #remindersListCard .card-header {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    #remindersListCard.is-collapsed .card-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    #remindersListCard.is-collapsed .filter-pills {
+        display: none !important;
+    }
+
+    #remindersListCard:not(.is-collapsed) .card-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #remindersListCard:not(.is-collapsed) .card-header-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        gap: 8px;
+    }
+
+    #remindersListCard:not(.is-collapsed) .filter-pills {
+        flex: 1;
+    }
+
+    /* History Card Header on Mobile */
+    #historyCard .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    #historyCard .card-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Accordion Rotation States */
+    .collapsible-card.is-collapsed .accordion-chevron {
+        transform: rotate(0deg);
+    }
+
+    .collapsible-card:not(.is-collapsed) .accordion-chevron {
+        transform: rotate(180deg);
+    }
+
+    /* Collapsed Card Body State */
+    .collapsible-card.is-collapsed .card-body {
+        max-height: 0 !important;
+        opacity: 0 !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+        pointer-events: none !important;
+        border: none !important;
+        transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease, padding 0.35s ease;
+    }
+
+    /* Expanded Card Body State */
+    .collapsible-card:not(.is-collapsed) .card-body {
+        max-height: 4000px;
+        opacity: 1;
+        overflow: visible;
+        pointer-events: auto;
+        transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, padding 0.35s ease;
+    }
 }
