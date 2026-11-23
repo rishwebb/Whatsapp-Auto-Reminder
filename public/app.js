@@ -144,6 +144,7 @@ const modalOneTimeMessagesContainer = document.getElementById('modalOneTimeMessa
 const btnAddOneTimeVariation = document.getElementById('btnAddOneTimeVariation');
 
 const btnOpenNewModal = document.getElementById('btnOpenNewModal');
+const mobileFabAdd = document.getElementById('mobileFabAdd');
 const btnCloseModal = document.getElementById('btnCloseModal');
 const btnCancelModal = document.getElementById('btnCancelModal');
 
@@ -808,6 +809,7 @@ document.querySelectorAll('input[name="reminderType"]').forEach(radio => {
 });
 
 btnOpenNewModal.addEventListener('click', openCreateModal);
+if (mobileFabAdd) mobileFabAdd.addEventListener('click', openCreateModal);
 btnCloseModal.addEventListener('click', closeModal);
 btnCancelModal.addEventListener('click', closeModal);
 
